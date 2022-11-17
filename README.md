@@ -22,3 +22,13 @@ List 10 connection names:
 Jennie May
 ...
 ```
+
+## Setup
+
+This tool uses GCP to enable the People API in a project. For simplicity, that configuration is tracked in [Terraform](https://terraform.io).
+
+### Initial Import
+
+```
+$ cd terraform && terraform import google_project_service.people_api xmas-card-addresses/people.googleapis.com
+```

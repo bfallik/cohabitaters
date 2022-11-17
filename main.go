@@ -88,21 +88,39 @@ func main() {
 		log.Fatalf("Unable to create people Client %v", err)
 	}
 
-	r, err := srv.People.Connections.List("people/me").PageSize(10).
-		PersonFields("names,emailAddresses").Do()
+	var resourceNameXmasCard string
+
+	r1, err := srv.ContactGroups.List().Do()
+	if err != nil {
+		log.Fatalf("Unable to retrieve contactGroups. %v", err)
+	}
+	for _, contactGroup := range r1.ContactGroups {
+		if contactGroup.Name == "Xmas Card" {
+			resourceNameXmasCard = contactGroup.ResourceName
+			fmt.Printf("%s\n", resourceNameXmasCard)
+		}
+	}
+	if len(resourceNameXmasCard) == 0 {
+		log.Fatalf("No 'Xmas Card' contact group found.")
+	}
+
+	// contactGroups.get
+	r2, err := srv.ContactGroups.Get(resourceNameXmasCard).MaxMembers(1000).Do()
+	if err != nil {
+		log.Fatalf("Unable to retrieve contactGroup members. %v", err)
+	}
+	if len(r2.MemberResourceNames) == 0 {
+		log.Fatalf("Empty contactGroup members. %v", err)
+	}
+
+	r3, err := srv.People.GetBatchGet().ResourceNames(r2.MemberResourceNames...).PersonFields("names").Do()
 	if err != nil {
 		log.Fatalf("Unable to retrieve people. %v", err)
 	}
-	if len(r.Connections) > 0 {
-		fmt.Print("List 10 connection names:\n")
-		for _, c := range r.Connections {
-			names := c.Names
-			if len(names) > 0 {
-				name := names[0].DisplayName
-				fmt.Printf("%s\n", name)
-			}
-		}
-	} else {
-		fmt.Print("No connections found.")
+	if len(r3.Responses) == 0 {
+		log.Fatalf("Empty responses. %v", err)
+	}
+	for _, n := range r3.Responses {
+		fmt.Printf("%s\n", n.Person.Names[0].DisplayName)
 	}
 }

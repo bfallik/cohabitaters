@@ -7,7 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
+	"github.com/lithammer/fuzzysearch/fuzzy"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
@@ -97,7 +99,6 @@ func main() {
 	for _, contactGroup := range r1.ContactGroups {
 		if contactGroup.Name == "Xmas Card" {
 			resourceNameXmasCard = contactGroup.ResourceName
-			fmt.Printf("%s\n", resourceNameXmasCard)
 		}
 	}
 	if len(resourceNameXmasCard) == 0 {
@@ -113,14 +114,90 @@ func main() {
 		log.Fatalf("Empty contactGroup members. %v", err)
 	}
 
-	r3, err := srv.People.GetBatchGet().ResourceNames(r2.MemberResourceNames...).PersonFields("names").Do()
+	r3, err := srv.People.GetBatchGet().ResourceNames(r2.MemberResourceNames...).PersonFields("names,addresses").Do()
 	if err != nil {
 		log.Fatalf("Unable to retrieve people. %v", err)
 	}
 	if len(r3.Responses) == 0 {
 		log.Fatalf("Empty responses. %v", err)
 	}
-	for _, n := range r3.Responses {
-		fmt.Printf("%s\n", n.Person.Names[0].DisplayName)
+
+	var cards []XmasCard
+
+	for _, pr := range r3.Responses {
+		name := pr.Person.Names[0].DisplayName
+		found := false
+		homeAddr, err := pickHomeAddress(pr.Person.Addresses)
+		if err != nil {
+			log.Fatalf("Unable to pick home address for %s. %v", name, err)
+		}
+
+		for idx, card := range cards {
+			if fuzzyAddressMatch(homeAddr, card.Address) {
+				cards[idx].Names = append(cards[idx].Names, name)
+				found = true
+			}
+		}
+		if !found {
+			cards = append(cards, XmasCard{
+				Names:   []string{name},
+				Address: newAddress(homeAddr),
+			})
+		}
 	}
+
+	for _, card := range cards {
+		fmt.Printf("%v\n", card)
+	}
+}
+
+type XmasCard struct {
+	Names   []string
+	Address Address
+}
+
+type Address struct {
+	StreetAddress  string
+	StreetAddress2 string
+	City           string
+	Region         string
+	Country        string
+	PostalCode     string
+}
+
+func newAddress(in *people.Address) Address {
+	return Address{
+		StreetAddress:  in.StreetAddress,
+		StreetAddress2: in.ExtendedAddress,
+		City:           in.City,
+		Region:         in.Region,
+		Country:        in.Country,
+		PostalCode:     in.PostalCode,
+	}
+}
+
+func pickHomeAddress(in []*people.Address) (*people.Address, error) {
+	switch {
+	case len(in) == 0:
+		return nil, fmt.Errorf("empty input")
+	case len(in) == 1:
+		return in[0], nil
+	default:
+		for _, addr := range in {
+			if strings.ToLower(addr.Type) == "home" {
+				return addr, nil
+			}
+		}
+		return nil, fmt.Errorf("no home address")
+	}
+}
+
+func fuzzyTrimMatch(a, b string) bool {
+	return fuzzy.Match(strings.TrimSpace(a), strings.TrimSpace(b))
+}
+
+func fuzzyAddressMatch(a *people.Address, b Address) bool {
+	//	fmt.Println(a.City, b.City, fuzzyTrimMatch(a.City, b.City))
+	return fuzzyTrimMatch(a.City, b.City) &&
+		fuzzyTrimMatch(a.StreetAddress, b.StreetAddress)
 }

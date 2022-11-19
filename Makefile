@@ -3,6 +3,7 @@
  endif
 
 BINARIES := \
+  cohab-server \
   cohabcli
 
 PATH := $(shell go env GOPATH)/bin:$(PATH)

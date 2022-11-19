@@ -1,4 +1,4 @@
-# xmas-card-addresses
+# cohabitaters
 
 A tool to generate a Christmas card address list from [Google Contacts](https://contacts.google.com/).
 

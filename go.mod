@@ -1,4 +1,4 @@
-module xmas-card-addresses
+module github.com/bfallik/cohabitaters
 
 go 1.18
 

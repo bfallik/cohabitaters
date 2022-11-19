@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	cohabitaters "github.com/bfallik/xmas-card-addresses"
+	"github.com/bfallik/cohabitaters"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"

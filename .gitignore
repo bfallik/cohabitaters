@@ -15,6 +15,7 @@
 # vendor/
 
 # Other
+air-tmp/
+bin/
 credentials.json
 token.json
-bin/

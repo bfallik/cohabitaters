@@ -1,0 +1,24 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Hello</title>
+</head>
+
+<body>
+    <div class="flex min-h-full w-full flex-col bg-slate-400 grow word-break">
+        <div class="flex h- w-screen text-xl font-bold text-white">Cohabitaters</div>
+        <div class="flex">
+            <div class="w-32 h-32 min-w-[8rem]"></div>
+            <div class="w-full p-2 bg-slate-200">
+                {{template "body" .}}
+            </div>
+        </div>
+        <div class="text-center text-white">&copy;2022 - Brian Fallik</div>
+    </div>
+</body>
+
+</html>
+{{end}}

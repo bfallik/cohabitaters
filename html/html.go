@@ -2,21 +2,29 @@ package html
 
 import (
 	"embed"
-	"io"
-	"text/template"
+	"html/template"
 )
 
 var (
 	//go:embed templates/*
-	indexFS embed.FS
-	index   = parse("templates/index.html")
+	fs embed.FS
+
+	Templates = mustParse(
+		tc{name: "index.html", paths: []string{"templates/index.html", "templates/base.html"}},
+		tc{name: "error.html", paths: []string{"templates/error.html", "templates/base.html"}},
+	)
 )
 
-func Index(w io.Writer, data any) error {
-	return index.Execute(w, data)
+type tc struct {
+	name  string
+	paths []string
 }
 
-func parse(file string) *template.Template {
-	return template.Must(
-		template.New("index.html").ParseFS(indexFS, file))
+func mustParse(config ...tc) []*template.Template {
+	res := []*template.Template{}
+	for _, c := range config {
+		t := template.Must(template.New(c.name).ParseFS(fs, c.paths...))
+		res = append(res, t)
+	}
+	return res
 }

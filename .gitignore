@@ -19,3 +19,4 @@ air-tmp/
 bin/
 credentials.json
 token.json
+client_secret*.json

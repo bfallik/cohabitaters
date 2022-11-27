@@ -2,7 +2,9 @@ package html
 
 import (
 	"embed"
+	"fmt"
 	"html/template"
+	"io"
 )
 
 var (
@@ -27,4 +29,24 @@ func mustParse(config ...tc) []*template.Template {
 		res = append(res, t)
 	}
 	return res
+}
+
+type Templater struct {
+	templates map[string]*template.Template
+}
+
+func NewTemplater(tmpls ...*template.Template) *Templater {
+	m := map[string]*template.Template{}
+	for _, t := range tmpls {
+		m[t.Name()] = t
+	}
+	return &Templater{templates: m}
+}
+
+func (t *Templater) Render(w io.Writer, name string, data interface{}) error {
+	tmpl, ok := t.templates[name]
+	if !ok {
+		return fmt.Errorf("template %s not found", name)
+	}
+	return tmpl.ExecuteTemplate(w, "base", data)
 }

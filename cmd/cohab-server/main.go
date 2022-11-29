@@ -26,6 +26,7 @@ const hostname = "localhost"
 const port = "8080"
 
 var googleOauthConfig *oauth2.Config
+var googleForceApproval bool // TODO: global for now
 
 type renderBridge struct {
 	*html.Templater
@@ -97,8 +98,18 @@ func main() {
 			AuthCodeURL receive state that is a token to protect the user from CSRF attacks. You must always provide a non-empty string and
 			validate that it matches the the state query parameter on your redirect callback.
 		*/
-		u := googleOauthConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline)
+		var u string
+		if googleForceApproval {
+			u = googleOauthConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline, oauth2.ApprovalForce)
+		} else {
+			u = googleOauthConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline)
+		}
 		return c.Redirect(http.StatusTemporaryRedirect, u)
+	})
+
+	e.GET("/auth/google/force-approval", func(c echo.Context) error {
+		googleForceApproval = !googleForceApproval
+		return c.JSON(http.StatusOK, struct{ ForceApproval bool }{googleForceApproval})
 	})
 
 	e.GET("/auth/google/callback", func(c echo.Context) error {

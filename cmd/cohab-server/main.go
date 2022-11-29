@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +16,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	oauth2_api "google.golang.org/api/oauth2/v2"
@@ -50,13 +52,7 @@ func newStateAuthCookie() *http.Cookie {
 	return cookie
 }
 
-func getUserDataFromGoogle(ctx context.Context, code string) (*oauth2_api.Userinfo, error) {
-	token, err := googleOauthConfig.Exchange(ctx, code)
-	if err != nil {
-		return nil, fmt.Errorf("code exchange error: %w", err)
-	}
-
-	tokenSource := googleOauthConfig.TokenSource(ctx, token)
+func getUserDataFromGoogle(ctx context.Context, tokenSource oauth2.TokenSource) (*oauth2_api.Userinfo, error) {
 	oauth2Service, err := oauth2_api.NewService(ctx, option.WithTokenSource(tokenSource))
 	if err != nil {
 		return nil, err
@@ -64,6 +60,15 @@ func getUserDataFromGoogle(ctx context.Context, code string) (*oauth2_api.Userin
 
 	userInfoService := oauth2_api.NewUserinfoV2MeService(oauth2Service)
 	return userInfoService.Get().Do()
+}
+
+func getContactGroups(ctx context.Context, tokenSource oauth2.TokenSource) (*people.ListContactGroupsResponse, error) {
+	srv, err := people.NewService(ctx, option.WithTokenSource(tokenSource))
+	if err != nil {
+		log.Fatalf("Unable to create people Client %v", err)
+	}
+
+	return srv.ContactGroups.List().Do()
 }
 
 func main() {
@@ -76,6 +81,7 @@ func main() {
 	store := sessions.NewCookieStore([]byte(cohabitaters.RandBase64()))
 
 	e := echo.New()
+	e.Use(middleware.Logger())
 	e.Use(session.Middleware(store))
 	e.Renderer = renderBridge{html.NewTemplater(html.Templates...)}
 
@@ -83,7 +89,43 @@ func main() {
 	e.GET("/static/fontawesome/*", echo.WrapHandler(faHandler))
 
 	e.GET("/", func(c echo.Context) error {
-		return c.Render(http.StatusOK, "index.html", nil)
+		tmplData := struct {
+			WelcomeMsg string
+			Groups     []*people.ContactGroup
+		}{"Welcome", nil}
+
+		s, _ := session.Get("default_session", c)
+		tokenVar, ok := s.Values["token"]
+		if !ok {
+			return c.Render(http.StatusOK, "index.html", tmplData)
+		}
+
+		tokenJSON, ok := tokenVar.(string)
+		if !ok {
+			return fmt.Errorf("unexpected token type")
+		}
+
+		token := new(oauth2.Token)
+		if err := json.Unmarshal([]byte(tokenJSON), token); err != nil {
+			return fmt.Errorf("json unmarshal: %w", err)
+		}
+
+		ctx := c.Request().Context()
+		tokenSource := googleOauthConfig.TokenSource(ctx, token)
+
+		data, err := getUserDataFromGoogle(ctx, tokenSource)
+		if err != nil {
+			return err
+		}
+
+		groups, err := getContactGroups(ctx, tokenSource)
+		if err != nil {
+			return err
+		}
+
+		tmplData.WelcomeMsg = fmt.Sprintf("Welcome %s", data.Email)
+		tmplData.Groups = groups.ContactGroups
+		return c.Render(http.StatusOK, "index.html", tmplData)
 	})
 
 	e.GET("/error", func(c echo.Context) error {
@@ -127,40 +169,30 @@ func main() {
 			return fmt.Errorf("empty code parameter")
 		}
 
+		ctx := c.Request().Context()
+		token, err := googleOauthConfig.Exchange(ctx, code)
+		if err != nil {
+			return fmt.Errorf("code exchange error: %w", err)
+		}
+
+		tokenJSON, err := json.Marshal(token)
+		if err != nil {
+			return fmt.Errorf("json error: %w", err)
+		}
+
 		s, _ := session.Get("default_session", c)
 		s.Options = &sessions.Options{
 			Path:     "/",
 			MaxAge:   86400 * 7,
 			HttpOnly: true,
 		}
-		s.Values["code"] = code
+		s.Values["token"] = string(tokenJSON)
 		if err := s.Save(c.Request(), c.Response()); err != nil {
 			return err
 		}
 
-		return c.Redirect(http.StatusTemporaryRedirect, "/query")
+		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	}).Name = "redirectURL"
-
-	e.GET("/query", func(c echo.Context) error {
-		s, _ := session.Get("default_session", c)
-		codeVar, ok := s.Values["code"]
-		if !ok {
-			return fmt.Errorf("missing code from session")
-		}
-
-		code, ok := codeVar.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type for code")
-		}
-
-		data, err := getUserDataFromGoogle(c.Request().Context(), code)
-		if err != nil {
-			return err
-		}
-
-		log.Println("Userinfo: ", data)
-		return nil
-	})
 
 	serverAddress := net.JoinHostPort(hostname, port)
 	redirectURL := url.URL{Scheme: "http", Host: serverAddress, Path: e.Reverse("redirectURL")}

@@ -1,8 +1,9 @@
 {{define "body"}}
 
-<p>Hello world.</p>
+<p>{{ .WelcomeMsg }}</p>
 
-Click <a href="/auth/google/login" class="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">here</a>
-to authorize.
+{{range $grp := .Groups}}
+<div>{{$grp.FormattedName}}</div>
+{{end}}
 
 {{end}}

@@ -5,17 +5,31 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 )
 
 var (
 	//go:embed templates/*
-	fs embed.FS
+	templatesEmbed embed.FS
 
 	Templates = mustParse(
 		tc{name: "index.html", paths: []string{"templates/index.html", "templates/base.html"}},
 		tc{name: "error.html", paths: []string{"templates/error.html", "templates/base.html"}},
 	)
+
+	//go:embed fontawesome-free-6.2.1-web/*
+	fontAwesomeEmbed embed.FS
+
+	FontAwesomeFS = mustSub(fontAwesomeEmbed)
 )
+
+func mustSub(emb fs.FS) fs.FS {
+	fa, err := fs.Sub(emb, "fontawesome-free-6.2.1-web")
+	if err != nil {
+		panic(err)
+	}
+	return fa
+}
 
 type tc struct {
 	name  string
@@ -25,7 +39,7 @@ type tc struct {
 func mustParse(config ...tc) []*template.Template {
 	res := []*template.Template{}
 	for _, c := range config {
-		t := template.Must(template.New(c.name).ParseFS(fs, c.paths...))
+		t := template.Must(template.New(c.name).ParseFS(templatesEmbed, c.paths...))
 		res = append(res, t)
 	}
 	return res

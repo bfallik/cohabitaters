@@ -78,6 +78,9 @@ func main() {
 	e.Use(session.Middleware(store))
 	e.Renderer = renderBridge{html.NewTemplater(html.Templates...)}
 
+	faHandler := http.StripPrefix("/static/fontawesome/", http.FileServer(http.FS(html.FontAwesomeFS)))
+	e.GET("/static/fontawesome/*", echo.WrapHandler(faHandler))
+
 	e.GET("/", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "index.html", nil)
 	})

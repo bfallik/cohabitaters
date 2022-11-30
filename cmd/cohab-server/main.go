@@ -72,7 +72,7 @@ func getUserDataFromGoogle(ctx context.Context, tokenSource oauth2.TokenSource) 
 func getContactGroups(ctx context.Context, tokenSource oauth2.TokenSource) (*people.ListContactGroupsResponse, error) {
 	srv, err := people.NewService(ctx, option.WithTokenSource(tokenSource))
 	if err != nil {
-		log.Fatalf("Unable to create people Client %v", err)
+		return nil, fmt.Errorf("unable to create people service %w", err)
 	}
 
 	return srv.ContactGroups.List().Do()

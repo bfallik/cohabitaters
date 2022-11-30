@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/bfallik/cohabitaters"
 	"github.com/bfallik/cohabitaters/html"
+	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -41,9 +43,14 @@ func (t renderBridge) Render(w io.Writer, name string, data interface{}, c echo.
 const oauthCookieName = "oauthStateCookie"
 
 func newStateAuthCookie() *http.Cookie {
+	bs := securecookie.GenerateRandomKey(32)
+	if bs == nil {
+		panic("unable to allocated random bytes")
+	}
+
 	cookie := new(http.Cookie)
 	cookie.Name = oauthCookieName
-	cookie.Value = cohabitaters.RandBase64()
+	cookie.Value = base64.URLEncoding.EncodeToString(bs)
 	cookie.Expires = time.Now().Add(24 * time.Hour)
 	cookie.Path = "/"
 	cookie.Domain = hostname
@@ -78,7 +85,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	store := sessions.NewCookieStore([]byte(cohabitaters.RandBase64()))
+	hashKey, blockKey := securecookie.GenerateRandomKey(32), securecookie.GenerateRandomKey(32)
+	if hashKey == nil || blockKey == nil {
+		log.Fatal("unable to generate initial random keys")
+	}
+	store := sessions.NewCookieStore(hashKey, blockKey)
 
 	e := echo.New()
 	e.Use(middleware.Logger())

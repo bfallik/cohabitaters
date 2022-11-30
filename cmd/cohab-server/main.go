@@ -166,6 +166,11 @@ func main() {
 	})
 
 	e.GET("/auth/google/callback", func(c echo.Context) error {
+		maybeError := c.QueryParam("error")
+		if len(maybeError) > 0 {
+			return fmt.Errorf("authorization error: %s", maybeError)
+		}
+
 		oauthState, err := c.Cookie(oauthCookieName)
 		if err != nil {
 			return fmt.Errorf("unable to retrieve %s cookie: %w", oauthCookieName, err)

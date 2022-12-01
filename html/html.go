@@ -13,8 +13,8 @@ var (
 	templatesEmbed embed.FS
 
 	Templates = mustParse(
-		tc{name: "index.html", paths: []string{"templates/index.html", "templates/base.html"}},
-		tc{name: "error.html", paths: []string{"templates/error.html", "templates/base.html"}},
+		tc{name: "index.html", paths: []string{"templates/index.html", "templates/partials/*.html"}},
+		tc{name: "error.html", paths: []string{"templates/error.html", "templates/partials/*.html"}},
 	)
 
 	//go:embed fontawesome-free-6.2.1-web/*
@@ -62,5 +62,5 @@ func (t *Templater) Render(w io.Writer, name string, data interface{}) error {
 	if !ok {
 		return fmt.Errorf("template %s not found", name)
 	}
-	return tmpl.ExecuteTemplate(w, "base", data)
+	return tmpl.ExecuteTemplate(w, name, data)
 }

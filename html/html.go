@@ -6,6 +6,9 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
+
+	"github.com/bfallik/cohabitaters"
+	"google.golang.org/api/people/v1"
 )
 
 var (
@@ -14,6 +17,7 @@ var (
 
 	Templates = mustParse(
 		tc{name: "index.html", paths: []string{"templates/index.html", "templates/partials/*.html"}},
+		tc{name: "partials/results.html", paths: []string{"templates/partials/*.html"}},
 		tc{name: "error.html", paths: []string{"templates/error.html", "templates/partials/*.html"}},
 	)
 
@@ -63,4 +67,11 @@ func (t *Templater) Render(w io.Writer, name string, data interface{}) error {
 		return fmt.Errorf("template %s not found", name)
 	}
 	return tmpl.ExecuteTemplate(w, name, data)
+}
+
+type TmplIndexData struct {
+	WelcomeMsg           string
+	Groups               []*people.ContactGroup
+	TableResults         []cohabitaters.XmasCard
+	SelectedResourceName string
 }

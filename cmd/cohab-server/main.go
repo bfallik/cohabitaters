@@ -82,6 +82,16 @@ func getContactGroupsList(ctx context.Context, token *oauth2.Token) (*people.Lis
 	return srv.ContactGroups.List().Do()
 }
 
+func getContacts(ctx context.Context, token *oauth2.Token, contactGroupResource string) ([]cohabitaters.XmasCard, error) {
+	tokenSource := googleOauthConfig.TokenSource(ctx, token)
+	srv, err := people.NewService(ctx, option.WithTokenSource(tokenSource))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create people service %w", err)
+	}
+
+	return cohabitaters.GetXmasCards(srv, contactGroupResource)
+}
+
 // always returns a new or existing session ID
 func sessionID(s *sessions.Session) int {
 	idVar, ok := s.Values["id"]
@@ -97,10 +107,37 @@ func sessionID(s *sessions.Session) int {
 }
 
 type UserState struct {
-	GoogleForceApproval bool
-	Token               *oauth2.Token
-	Userinfo            *oauth2_api.Userinfo
-	ContactGroups       []*people.ContactGroup
+	GoogleForceApproval  bool
+	Token                *oauth2.Token
+	Userinfo             *oauth2_api.Userinfo
+	ContactGroups        []*people.ContactGroup
+	SelectedResourceName string
+}
+
+func newTmplIndexData(u UserState) html.TmplIndexData {
+	res := html.TmplIndexData{
+		WelcomeMsg:           "Welcome",
+		Groups:               u.ContactGroups,
+		SelectedResourceName: u.SelectedResourceName,
+	}
+
+	if u.Userinfo != nil {
+		res.WelcomeMsg = fmt.Sprintf("Welcome %s", u.Userinfo.Email)
+	}
+
+	return res
+}
+
+func (u UserState) getContacts(ctx context.Context, tmplData html.TmplIndexData) (html.TmplIndexData, error) {
+	if u.Token != nil && u.Token.Valid() && len(u.SelectedResourceName) > 0 {
+		cards, err := getContacts(ctx, u.Token, u.SelectedResourceName)
+		if err != nil {
+			return tmplData, err
+		}
+		tmplData.TableResults = cards
+		tmplData.SelectedResourceName = u.SelectedResourceName
+	}
+	return tmplData, nil
 }
 
 func main() {
@@ -136,26 +173,36 @@ func main() {
 	e.GET("/static/fontawesome/*", echo.WrapHandler(faHandler))
 
 	e.GET("/", func(c echo.Context) error {
-		tmplData := struct {
-			WelcomeMsg string
-			Groups     []*people.ContactGroup
-		}{"Welcome", nil}
-
 		s, _ := session.Get("default_session", c)
 		sessionID := sessionID(s)
-
 		userState := userCache.Get(sessionID)
 
-		if userState.Userinfo != nil {
-			tmplData.WelcomeMsg = fmt.Sprintf("Welcome %s", userState.Userinfo.Email)
+		tmplData := newTmplIndexData(userState)
+		if tmplData, err = userState.getContacts(c.Request().Context(), tmplData); err != nil {
+			return err
 		}
-		tmplData.Groups = userState.ContactGroups
 
 		s.Values["id"] = fmt.Sprint(sessionID)
 		if err := s.Save(c.Request(), c.Response()); err != nil {
 			return err
 		}
 		return c.Render(http.StatusOK, "index.html", tmplData)
+	})
+
+	e.GET("/partial/tableResults", func(c echo.Context) error {
+		s, _ := session.Get("default_session", c)
+		sessionID := sessionID(s)
+		userState := userCache.Get(sessionID)
+
+		userState.SelectedResourceName = c.QueryParam("contact-group")
+		userCache.Set(sessionID, userState)
+
+		tmplData := newTmplIndexData(userState)
+		if tmplData, err = userState.getContacts(c.Request().Context(), tmplData); err != nil {
+			return err
+		}
+
+		return c.Render(http.StatusOK, "partials/results.html", tmplData)
 	})
 
 	e.GET("/error", func(c echo.Context) error {

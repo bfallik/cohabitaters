@@ -3,17 +3,20 @@ package main
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/bfallik/cohabitaters"
 	"github.com/bfallik/cohabitaters/html"
+	"github.com/bfallik/cohabitaters/mapcache"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
@@ -30,7 +33,6 @@ const hostname = "localhost"
 const port = "8080"
 
 var googleOauthConfig *oauth2.Config
-var googleForceApproval bool // TODO: global for now
 
 type renderBridge struct {
 	*html.Templater
@@ -59,7 +61,8 @@ func newStateAuthCookie() *http.Cookie {
 	return cookie
 }
 
-func getUserDataFromGoogle(ctx context.Context, tokenSource oauth2.TokenSource) (*oauth2_api.Userinfo, error) {
+func getUserinfo(ctx context.Context, token *oauth2.Token) (*oauth2_api.Userinfo, error) {
+	tokenSource := googleOauthConfig.TokenSource(ctx, token)
 	oauth2Service, err := oauth2_api.NewService(ctx, option.WithTokenSource(tokenSource))
 	if err != nil {
 		return nil, err
@@ -69,7 +72,8 @@ func getUserDataFromGoogle(ctx context.Context, tokenSource oauth2.TokenSource) 
 	return userInfoService.Get().Do()
 }
 
-func getContactGroups(ctx context.Context, tokenSource oauth2.TokenSource) (*people.ListContactGroupsResponse, error) {
+func getContactGroupsList(ctx context.Context, token *oauth2.Token) (*people.ListContactGroupsResponse, error) {
+	tokenSource := googleOauthConfig.TokenSource(ctx, token)
 	srv, err := people.NewService(ctx, option.WithTokenSource(tokenSource))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create people service %w", err)
@@ -78,18 +82,50 @@ func getContactGroups(ctx context.Context, tokenSource oauth2.TokenSource) (*peo
 	return srv.ContactGroups.List().Do()
 }
 
+// always returns a new or existing session ID
+func sessionID(s *sessions.Session) int {
+	idVar, ok := s.Values["id"]
+	if !ok {
+		return rand.Int()
+	}
+
+	id, err := strconv.Atoi(idVar.(string))
+	if err != nil {
+		return rand.Int()
+	}
+	return id
+}
+
+type UserState struct {
+	GoogleForceApproval bool
+	Token               *oauth2.Token
+	Userinfo            *oauth2_api.Userinfo
+	ContactGroups       []*people.ContactGroup
+}
+
 func main() {
+	rand.Seed(time.Now().UnixNano())
 
 	creds, err := cohabitaters.ConfigFromJSONFile("client_secret.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	hashKey, blockKey := securecookie.GenerateRandomKey(32), securecookie.GenerateRandomKey(32)
-	if hashKey == nil || blockKey == nil {
-		log.Fatal("unable to generate initial random keys")
+	var hashKey []byte
+	hashKeyStr, ok := os.LookupEnv("SESSION_HASH_KEY")
+	if !ok {
+		log.Printf("SESSION_HASH_KEY not set; generating new hash key")
+		hashKey = securecookie.GenerateRandomKey(32)
+		if hashKey == nil {
+			log.Fatal("unable to generate initial random keys")
+		}
+	} else {
+		hashKey = []byte(hashKeyStr)
 	}
-	store := sessions.NewCookieStore(hashKey, blockKey)
+
+	store := sessions.NewCookieStore(hashKey)
+
+	userCache := mapcache.Map[UserState]{}
 
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -106,36 +142,19 @@ func main() {
 		}{"Welcome", nil}
 
 		s, _ := session.Get("default_session", c)
-		tokenVar, ok := s.Values["token"]
-		if !ok {
-			return c.Render(http.StatusOK, "index.html", tmplData)
+		sessionID := sessionID(s)
+
+		userState := userCache.Get(sessionID)
+
+		if userState.Userinfo != nil {
+			tmplData.WelcomeMsg = fmt.Sprintf("Welcome %s", userState.Userinfo.Email)
 		}
+		tmplData.Groups = userState.ContactGroups
 
-		tokenJSON, ok := tokenVar.(string)
-		if !ok {
-			return fmt.Errorf("unexpected token type")
-		}
-
-		token := new(oauth2.Token)
-		if err := json.Unmarshal([]byte(tokenJSON), token); err != nil {
-			return fmt.Errorf("json unmarshal: %w", err)
-		}
-
-		ctx := c.Request().Context()
-		tokenSource := googleOauthConfig.TokenSource(ctx, token)
-
-		data, err := getUserDataFromGoogle(ctx, tokenSource)
-		if err != nil {
+		s.Values["id"] = fmt.Sprint(sessionID)
+		if err := s.Save(c.Request(), c.Response()); err != nil {
 			return err
 		}
-
-		groups, err := getContactGroups(ctx, tokenSource)
-		if err != nil {
-			return err
-		}
-
-		tmplData.WelcomeMsg = fmt.Sprintf("Welcome %s", data.Email)
-		tmplData.Groups = groups.ContactGroups
 		return c.Render(http.StatusOK, "index.html", tmplData)
 	})
 
@@ -151,8 +170,13 @@ func main() {
 			AuthCodeURL receive state that is a token to protect the user from CSRF attacks. You must always provide a non-empty string and
 			validate that it matches the the state query parameter on your redirect callback.
 		*/
+		s, _ := session.Get("default_session", c)
+		sessionID := sessionID(s)
+
+		userState := userCache.Get(sessionID)
+
 		var u string
-		if googleForceApproval {
+		if userState.GoogleForceApproval {
 			u = googleOauthConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline, oauth2.ApprovalForce)
 		} else {
 			u = googleOauthConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline)
@@ -161,8 +185,15 @@ func main() {
 	})
 
 	e.GET("/auth/google/force-approval", func(c echo.Context) error {
-		googleForceApproval = !googleForceApproval
-		return c.JSON(http.StatusOK, struct{ ForceApproval bool }{googleForceApproval})
+		s, _ := session.Get("default_session", c)
+		sessionID := sessionID(s)
+
+		userState := userCache.Get(sessionID)
+
+		userState.GoogleForceApproval = !userState.GoogleForceApproval
+		userCache.Set(sessionID, userState)
+
+		return c.JSON(http.StatusOK, struct{ ForceApproval bool }{userState.GoogleForceApproval})
 	})
 
 	e.GET("/auth/google/callback", func(c echo.Context) error {
@@ -191,18 +222,29 @@ func main() {
 			return fmt.Errorf("code exchange error: %w", err)
 		}
 
-		tokenJSON, err := json.Marshal(token)
+		userinfo, err := getUserinfo(ctx, token)
 		if err != nil {
-			return fmt.Errorf("json error: %w", err)
+			return err
 		}
 
-		s, _ := session.Get("default_session", c)
-		s.Options = &sessions.Options{
-			Path:     "/",
-			MaxAge:   86400 * 7,
-			HttpOnly: true,
+		groupsResponse, err := getContactGroupsList(ctx, token)
+		if err != nil {
+			return err
 		}
-		s.Values["token"] = string(tokenJSON)
+
+		s, err := session.Get("default_session", c)
+		if err != nil {
+			return fmt.Errorf("error getting session: %w", err)
+		}
+		sessionID := sessionID(s)
+
+		userState := userCache.Get(sessionID)
+		userState.Token = token
+		userState.Userinfo = userinfo
+		userState.ContactGroups = groupsResponse.ContactGroups
+		userCache.Set(sessionID, userState)
+
+		s.Values["id"] = fmt.Sprint(sessionID)
 		if err := s.Save(c.Request(), c.Response()); err != nil {
 			return err
 		}

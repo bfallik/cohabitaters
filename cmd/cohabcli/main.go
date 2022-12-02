@@ -101,45 +101,9 @@ func main() {
 		log.Fatalf("No 'Xmas Card' contact group found.")
 	}
 
-	// contactGroups.get
-	r2, err := srv.ContactGroups.Get(resourceNameXmasCard).MaxMembers(1000).Do()
+	cards, err := cohabitaters.GetXmasCards(srv, resourceNameXmasCard)
 	if err != nil {
-		log.Fatalf("Unable to retrieve contactGroup members. %v", err)
-	}
-	if len(r2.MemberResourceNames) == 0 {
-		log.Fatalf("Empty contactGroup members. %v", err)
-	}
-
-	r3, err := srv.People.GetBatchGet().ResourceNames(r2.MemberResourceNames...).PersonFields("names,addresses").Do()
-	if err != nil {
-		log.Fatalf("Unable to retrieve people. %v", err)
-	}
-	if len(r3.Responses) == 0 {
-		log.Fatalf("Empty responses. %v", err)
-	}
-
-	var cards []cohabitaters.XmasCard
-
-	for _, pr := range r3.Responses {
-		name := pr.Person.Names[0].DisplayName
-		found := false
-		homeAddr, err := cohabitaters.PickHomeAddress(pr.Person.Addresses)
-		if err != nil {
-			log.Fatalf("Unable to pick home address for %s. %v", name, err)
-		}
-
-		for idx, card := range cards {
-			if cohabitaters.FuzzyAddressMatch(homeAddr, card.Address) {
-				cards[idx].Names = append(cards[idx].Names, name)
-				found = true
-			}
-		}
-		if !found {
-			cards = append(cards, cohabitaters.XmasCard{
-				Names:   []string{name},
-				Address: cohabitaters.NewAddress(homeAddr),
-			})
-		}
+		log.Fatalf("getXmasCards: %v", err)
 	}
 
 	for _, card := range cards {

@@ -58,3 +58,47 @@ func FuzzyAddressMatch(a *people.Address, b Address) bool {
 	return FuzzyTrimMatch(a.City, b.City) &&
 		FuzzyTrimMatch(a.StreetAddress, b.StreetAddress)
 }
+
+func GetXmasCards(svc *people.Service, contactGroupResourceName string) ([]XmasCard, error) {
+	cgResp, err := svc.ContactGroups.Get(contactGroupResourceName).MaxMembers(1000).Do()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve contactGroup members: %w", err)
+	}
+	if len(cgResp.MemberResourceNames) == 0 {
+		return nil, fmt.Errorf("empty contactGroup members")
+	}
+
+	pplResp, err := svc.People.GetBatchGet().ResourceNames(cgResp.MemberResourceNames...).PersonFields("names,addresses").Do()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve people: %w", err)
+	}
+	if len(pplResp.Responses) == 0 {
+		return nil, fmt.Errorf("empty people responses")
+	}
+
+	var cards []XmasCard
+
+	for _, pr := range pplResp.Responses {
+		name := pr.Person.Names[0].DisplayName
+		found := false
+		homeAddr, err := PickHomeAddress(pr.Person.Addresses)
+		if err != nil {
+			return nil, fmt.Errorf("unable to pick home address for %s: %w", name, err)
+		}
+
+		for idx, card := range cards {
+			if FuzzyAddressMatch(homeAddr, card.Address) {
+				cards[idx].Names = append(cards[idx].Names, name)
+				found = true
+			}
+		}
+		if !found {
+			cards = append(cards, XmasCard{
+				Names:   []string{name},
+				Address: NewAddress(homeAddr),
+			})
+		}
+	}
+
+	return cards, nil
+}

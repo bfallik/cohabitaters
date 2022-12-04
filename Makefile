@@ -24,9 +24,9 @@ check:
 clean:
 	@rm -f $(BINARIES)
 
-.PHONY: serve-local
-serve-local:
+.PHONY: air
+air:
  ifeq (, $(shell which air))
  $(error "air not found, `go install` it")
  endif
-	air go run cmd/cohab-server/main.go
+	@air

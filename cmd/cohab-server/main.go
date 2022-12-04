@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 
@@ -148,18 +147,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var hashKey []byte
-	hashKeyStr, ok := os.LookupEnv("SESSION_HASH_KEY")
-	if !ok {
-		log.Printf("SESSION_HASH_KEY not set; generating new hash key")
-		hashKey = securecookie.GenerateRandomKey(32)
-		if hashKey == nil {
-			log.Fatal("unable to generate initial random keys")
-		}
-	} else {
-		hashKey = []byte(hashKeyStr)
+	hashKey := securecookie.GenerateRandomKey(32)
+	if hashKey == nil {
+		log.Fatal("unable to generate initial random keys")
 	}
-
 	store := sessions.NewCookieStore(hashKey)
 
 	userCache := mapcache.Map[UserState]{}

@@ -5,7 +5,7 @@ tmp_dir = "air-tmp"
 [build]
   args_bin = []
   bin = "./bin/cohab-server"
-  cmd = "cd cmd/cohab-server && go build -o ../../bin/cohab-server"
+  cmd = "make bin/cohab-server"
   delay = 1000
   exclude_dir = ["assets", "air-tmp", "vendor", "testdata", "terraform"]
   exclude_file = []

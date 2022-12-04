@@ -70,3 +70,24 @@ Use `cohab-server-dev-podman.sh`:
   ❯ deploy/cohab-server-dev-podman.sh
 
 ```
+
+### Deploy remotely
+
+The final version gets deployed to [fly.io](https://fly.io/).
+
+Prerequisite 1: create the DNS record and then the certificate:
+
+```
+❯ flyctl certs create cohabitaters.bfallik.net
+```
+
+Prerequisite 2: create the applications secret from the downloaded OAuth2 client credentials:
+
+```
+❯ flyctl secrets set GOOGLE_APP_CREDENTIALS="$(< path/to/downloaded/client_secret.json)"
+```
+
+Then just:
+```
+  ❯ flyctl deploy
+```

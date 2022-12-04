@@ -19,6 +19,7 @@ $(TARGETS): bin/%:
 check:
 	go test ./...
 	golangci-lint run
+	shellcheck deploy/*.sh
 
 .PHONY: clean
 clean:

@@ -1,34 +1,72 @@
 # cohabitaters
 
-A tool to generate a Christmas card address list from [Google Contacts](https://contacts.google.com/).
+A little web app to generate a Christmas card address list from [Google Contacts](https://contacts.google.com/).
 
-## Usage
+I like to store my data centrally but Google doesn't make it easy to aggregate contacts by where they live. I don't want to send multiple cards to the same address.
 
-This follows the [People API Quickstart example](https://developers.google.com/people/quickstart/go).
+## Local Development
 
-First, download the credentials.json to this directory. Then
+Cohabitaters uses several platforms and libraries.
+* [htmx](https://htmx.org/) for the front-end
+* [Tailwind CSS](https://tailwindcss.com/) and [Flowbite](https://flowbite.com/) for CSS and basic UI components
+* [Font Awesome](https://fontawesome.com/) for icons
+* [Go](https://go.dev/) for the back-end
+* [Air](https://github.com/cosmtrek/air) for live reloading
+
+Local dev is driven from the top-level Makefile:
+```
+❯ make bin/cohab-server
+cd cmd/cohab-server && go build -o ../../bin/cohab-server
+❯ make air
+
+  __    _   ___
+ / /\  | | | |_)
+/_/--\ |_| |_| \_ , built with Go
+
+watching .
+!exclude air-tmp
+watching bin
+watching cmd
+watching cmd/cohab-server
+watching cmd/cohabcli
+watching deploy
+watching html
+watching html/fontawesome-free-6.2.1-web
+watching html/fontawesome-free-6.2.1-web/css
+watching html/fontawesome-free-6.2.1-web/webfonts
+watching html/templates
+watching html/templates/partials
+watching mapcache
+!exclude terraform
+building...
+make[1]: Entering directory '/home/bfallik/sandbox/cohabitaters'
+cd cmd/cohab-server && go build -o ../../bin/cohab-server
+make[1]: Leaving directory '/home/bfallik/sandbox/cohabitaters'
+running...
+^Ccleaning...
+see you again~
 
 ```
-  $ go run main.go
-  Go to the following link in your browser then type the authorization code:
-https://accounts.google.com/o/oauth2/auth?access_type=offline&client_id=1048297799487-jd1j1q4bbspmgf9b71h5skkj6amfl1ob.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcontacts.readonly&state=state-token
-```
-and follow the instructions to open the link in your browser. After the authorization process, Google will attempt to redirect you to a local webserver that isn't listening. Simply copy the `code=XXXX` authorization code into the console:
 
-```
-XXXX
-Saving credential file to: token.json
-List 10 connection names:
-Jennie May
-...
-```
+## Deployment
 
-## Setup
-
-This tool uses GCP to enable the People API in a project. For simplicity, that configuration is tracked in [Terraform](https://terraform.io).
+This tool requires a [GCP](https://cloud.google.com/) Project for access to the [People API](https://developers.google.com/people). For simplicity, that configuration is tracked in [Terraform](https://terraform.io).
 
 ### Initial Import
 
 ```
 $ cd terraform && terraform import google_project_service.people_api xmas-card-addresses/people.googleapis.com
+```
+
+### Deploy Locally
+
+`make air` will build and launch the web server and repeat when any source files have changed. By default the server will listen on `localhost:8080`.
+
+### Deploy locally with Podman
+
+Use `cohab-server-dev-podman.sh`:
+
+```
+  ❯ deploy/cohab-server-dev-podman.sh
+
 ```

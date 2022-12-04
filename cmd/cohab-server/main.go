@@ -29,8 +29,7 @@ import (
 	"google.golang.org/api/people/v1"
 )
 
-const hostname = "localhost"
-const port = "8080"
+const defaultListenAddress = "localhost:8080"
 
 var googleOauthConfig *oauth2.Config
 
@@ -44,7 +43,7 @@ func (t renderBridge) Render(w io.Writer, name string, data interface{}, c echo.
 
 const oauthCookieName = "oauthStateCookie"
 
-func newStateAuthCookie() *http.Cookie {
+func newStateAuthCookie(domain string) *http.Cookie {
 	bs := securecookie.GenerateRandomKey(32)
 	if bs == nil {
 		panic("unable to allocated random bytes")
@@ -55,7 +54,7 @@ func newStateAuthCookie() *http.Cookie {
 	cookie.Value = base64.URLEncoding.EncodeToString(bs)
 	cookie.Expires = time.Now().Add(24 * time.Hour)
 	cookie.Path = "/"
-	cookie.Domain = hostname
+	cookie.Domain = domain
 	cookie.Secure = true
 	cookie.HttpOnly = true
 	return cookie
@@ -143,6 +142,15 @@ func (u UserState) getContacts(ctx context.Context, tmplData html.TmplIndexData)
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
+	listenAddress, ok := os.LookupEnv("LISTEN_ADDRESS")
+	if !ok {
+		listenAddress = defaultListenAddress
+	}
+	hostname, _, err := net.SplitHostPort(listenAddress)
+	if err != nil {
+		log.Fatalf("invalid listen address: %v", err)
+	}
+
 	googleAppCredentials := os.Getenv("GOOGLE_APP_CREDENTIALS")
 	creds, err := google.ConfigFromJSON([]byte(googleAppCredentials))
 	if err != nil {
@@ -203,7 +211,7 @@ func main() {
 	})
 
 	e.GET("/auth/google/login", func(c echo.Context) error {
-		oauthState := newStateAuthCookie()
+		oauthState := newStateAuthCookie(hostname)
 		c.SetCookie(oauthState)
 
 		/*
@@ -292,8 +300,7 @@ func main() {
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	}).Name = "redirectURL"
 
-	serverAddress := net.JoinHostPort(hostname, port)
-	redirectURL := url.URL{Scheme: "http", Host: serverAddress, Path: e.Reverse("redirectURL")}
+	redirectURL := url.URL{Scheme: "http", Host: listenAddress, Path: e.Reverse("redirectURL")}
 	googleOauthConfig = &oauth2.Config{
 		ClientID:     creds.ClientID,
 		ClientSecret: creds.ClientSecret,
@@ -302,5 +309,5 @@ func main() {
 		RedirectURL:  redirectURL.String(),
 	}
 
-	e.Logger.Fatal(e.Start(serverAddress))
+	e.Logger.Fatal(e.Start(listenAddress))
 }

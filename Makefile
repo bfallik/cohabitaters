@@ -23,7 +23,7 @@ check:
 
 .PHONY: clean
 clean:
-	@rm -f $(BINARIES)
+	rm -f $(TARGETS)
 
 .PHONY: air
 air:

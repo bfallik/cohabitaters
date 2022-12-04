@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"math/rand"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -30,8 +29,6 @@ import (
 )
 
 const defaultListenAddress = "localhost:8080"
-
-var googleOauthConfig *oauth2.Config
 
 type renderBridge struct {
 	*html.Templater
@@ -60,8 +57,8 @@ func newStateAuthCookie(domain string) *http.Cookie {
 	return cookie
 }
 
-func getUserinfo(ctx context.Context, token *oauth2.Token) (*oauth2_api.Userinfo, error) {
-	tokenSource := googleOauthConfig.TokenSource(ctx, token)
+func getUserinfo(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token) (*oauth2_api.Userinfo, error) {
+	tokenSource := cfg.TokenSource(ctx, token)
 	oauth2Service, err := oauth2_api.NewService(ctx, option.WithTokenSource(tokenSource))
 	if err != nil {
 		return nil, err
@@ -71,8 +68,8 @@ func getUserinfo(ctx context.Context, token *oauth2.Token) (*oauth2_api.Userinfo
 	return userInfoService.Get().Do()
 }
 
-func getContactGroupsList(ctx context.Context, token *oauth2.Token) (*people.ListContactGroupsResponse, error) {
-	tokenSource := googleOauthConfig.TokenSource(ctx, token)
+func getContactGroupsList(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token) (*people.ListContactGroupsResponse, error) {
+	tokenSource := cfg.TokenSource(ctx, token)
 	srv, err := people.NewService(ctx, option.WithTokenSource(tokenSource))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create people service %w", err)
@@ -81,8 +78,8 @@ func getContactGroupsList(ctx context.Context, token *oauth2.Token) (*people.Lis
 	return srv.ContactGroups.List().Do()
 }
 
-func getContacts(ctx context.Context, token *oauth2.Token, contactGroupResource string) ([]cohabitaters.XmasCard, error) {
-	tokenSource := googleOauthConfig.TokenSource(ctx, token)
+func getContacts(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token, contactGroupResource string) ([]cohabitaters.XmasCard, error) {
+	tokenSource := cfg.TokenSource(ctx, token)
 	srv, err := people.NewService(ctx, option.WithTokenSource(tokenSource))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create people service %w", err)
@@ -127,9 +124,9 @@ func newTmplIndexData(u UserState) html.TmplIndexData {
 	return res
 }
 
-func (u UserState) getContacts(ctx context.Context, tmplData html.TmplIndexData) (html.TmplIndexData, error) {
+func (u UserState) getContacts(ctx context.Context, cfg *oauth2.Config, tmplData html.TmplIndexData) (html.TmplIndexData, error) {
 	if u.Token != nil && u.Token.Valid() && len(u.SelectedResourceName) > 0 {
-		cards, err := getContacts(ctx, u.Token, u.SelectedResourceName)
+		cards, err := getContacts(ctx, cfg, u.Token, u.SelectedResourceName)
 		if err != nil {
 			return tmplData, err
 		}
@@ -148,16 +145,13 @@ func main() {
 	if !ok {
 		listenAddress = defaultListenAddress
 	}
-	hostname, _, err := net.SplitHostPort(listenAddress)
-	if err != nil {
-		log.Fatalf("invalid listen address: %v", err)
-	}
 
 	googleAppCredentials := os.Getenv("GOOGLE_APP_CREDENTIALS")
-	creds, err := google.ConfigFromJSON([]byte(googleAppCredentials))
+	oauthConfig, err := google.ConfigFromJSON([]byte(googleAppCredentials), people.ContactsReadonlyScope, people.UserinfoEmailScope)
 	if err != nil {
 		log.Fatalf("unable to create Google oauth2 config: %v", err)
 	}
+	oauthConfig.Endpoint = google.Endpoint
 
 	hashKey := securecookie.GenerateRandomKey(32)
 	if hashKey == nil {
@@ -181,7 +175,7 @@ func main() {
 		userState := userCache.Get(sessionID)
 
 		tmplData := newTmplIndexData(userState)
-		if tmplData, err = userState.getContacts(c.Request().Context(), tmplData); err != nil {
+		if tmplData, err = userState.getContacts(c.Request().Context(), oauthConfig, tmplData); err != nil {
 			return err
 		}
 
@@ -201,7 +195,7 @@ func main() {
 		userCache.Set(sessionID, userState)
 
 		tmplData := newTmplIndexData(userState)
-		if tmplData, err = userState.getContacts(c.Request().Context(), tmplData); err != nil {
+		if tmplData, err = userState.getContacts(c.Request().Context(), oauthConfig, tmplData); err != nil {
 			return err
 		}
 
@@ -213,8 +207,21 @@ func main() {
 	})
 
 	e.GET("/auth/google/login", func(c echo.Context) error {
-		oauthState := newStateAuthCookie(hostname)
+		host := c.Request().Host
+
+		oauthState := newStateAuthCookie(host)
 		c.SetCookie(oauthState)
+
+		localConfig := oauthConfig
+		callback := url.URL{
+			Scheme: c.Request().Header.Get("X-Forwarded-Proto"),
+			Host:   host,
+			Path:   e.Reverse("redirectURL"),
+		}
+		if callback.Scheme == "" {
+			callback.Scheme = "http"
+		}
+		localConfig.RedirectURL = callback.String()
 
 		/*
 			AuthCodeURL receive state that is a token to protect the user from CSRF attacks. You must always provide a non-empty string and
@@ -227,9 +234,9 @@ func main() {
 
 		var u string
 		if userState.GoogleForceApproval {
-			u = googleOauthConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline, oauth2.ApprovalForce)
+			u = localConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline, oauth2.ApprovalForce)
 		} else {
-			u = googleOauthConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline)
+			u = localConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline)
 		}
 		return c.Redirect(http.StatusTemporaryRedirect, u)
 	})
@@ -267,17 +274,17 @@ func main() {
 		}
 
 		ctx := c.Request().Context()
-		token, err := googleOauthConfig.Exchange(ctx, code)
+		token, err := oauthConfig.Exchange(ctx, code)
 		if err != nil {
 			return fmt.Errorf("code exchange error: %w", err)
 		}
 
-		userinfo, err := getUserinfo(ctx, token)
+		userinfo, err := getUserinfo(ctx, oauthConfig, token)
 		if err != nil {
 			return err
 		}
 
-		groupsResponse, err := getContactGroupsList(ctx, token)
+		groupsResponse, err := getContactGroupsList(ctx, oauthConfig, token)
 		if err != nil {
 			return err
 		}
@@ -301,15 +308,6 @@ func main() {
 
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	}).Name = "redirectURL"
-
-	redirectURL := url.URL{Scheme: "http", Host: listenAddress, Path: e.Reverse("redirectURL")}
-	googleOauthConfig = &oauth2.Config{
-		ClientID:     creds.ClientID,
-		ClientSecret: creds.ClientSecret,
-		Scopes:       []string{people.ContactsReadonlyScope, people.UserinfoEmailScope},
-		Endpoint:     google.Endpoint,
-		RedirectURL:  redirectURL.String(),
-	}
 
 	e.Logger.Fatal(e.Start(listenAddress))
 }

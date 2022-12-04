@@ -7,7 +7,7 @@ BINARIES := \
   cohabcli
 
 PATH := $(shell go env GOPATH)/bin:$(PATH)
-SHELL := env PATH=$(PATH) /bin/bash
+SHELL := env PATH=$(PATH) ${SHELL}
 
 TARGETS := $(addprefix bin/,$(BINARIES))
 
@@ -26,7 +26,9 @@ clean:
 
 .PHONY: air
 air:
- ifeq (, $(shell which air))
- $(error "air not found, `go install` it")
- endif
+	@[ $$(which air) ] || (echo "air not found, 'go install' it"; exit 1)
 	@air
+
+.PHONY: image-build
+image-build:
+	podman build -t cohab-server .

@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 
@@ -142,9 +143,10 @@ func (u UserState) getContacts(ctx context.Context, tmplData html.TmplIndexData)
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
-	creds, err := cohabitaters.ConfigFromJSONFile("client_secret.json")
+	googleAppCredentials := os.Getenv("GOOGLE_APP_CREDENTIALS")
+	creds, err := google.ConfigFromJSON([]byte(googleAppCredentials))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("unable to create Google oauth2 config: %v", err)
 	}
 
 	hashKey := securecookie.GenerateRandomKey(32)

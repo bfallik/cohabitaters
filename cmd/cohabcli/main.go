@@ -10,6 +10,7 @@ import (
 
 	"github.com/bfallik/cohabitaters"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 	"google.golang.org/api/people/v1"
 )
@@ -74,10 +75,10 @@ func saveToken(path string, token *oauth2.Token) {
 func main() {
 	ctx := context.Background()
 
-	// If modifying these scopes, delete your previously saved token.json.
-	config, err := cohabitaters.ConfigFromJSONFile("credentials.json", people.ContactsReadonlyScope)
+	googleAppCredentials := os.Getenv("GOOGLE_APP_CREDENTIALS")
+	config, err := google.ConfigFromJSON([]byte(googleAppCredentials), people.ContactsReadonlyScope)
 	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
+		log.Fatalf("unable to create Google oauth2 config: %v", err)
 	}
 	client := getClient(config)
 

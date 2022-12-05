@@ -142,6 +142,8 @@ func (u UserState) getContacts(ctx context.Context, tmplData html.TmplIndexData)
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
+	log.Printf("%s", cohabitaters.BuildInfo())
+
 	listenAddress, ok := os.LookupEnv("LISTEN_ADDRESS")
 	if !ok {
 		listenAddress = defaultListenAddress

@@ -75,6 +75,8 @@ func saveToken(path string, token *oauth2.Token) {
 func main() {
 	ctx := context.Background()
 
+	log.Printf("%s", cohabitaters.BuildInfo())
+
 	googleAppCredentials := os.Getenv("GOOGLE_APP_CREDENTIALS")
 	config, err := google.ConfigFromJSON([]byte(googleAppCredentials), people.ContactsReadonlyScope)
 	if err != nil {

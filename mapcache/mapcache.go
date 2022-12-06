@@ -17,3 +17,7 @@ func (m *Map[T]) Get(id int) T {
 func (m *Map[T]) Set(id int, t T) {
 	m.sm.Store(id, t)
 }
+
+func (m *Map[T]) Delete(id int) {
+	m.sm.Delete(id)
+}

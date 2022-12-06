@@ -242,6 +242,24 @@ func main() {
 		return c.Redirect(http.StatusTemporaryRedirect, u)
 	})
 
+	e.GET("/auth/google/logout", func(c echo.Context) error {
+		host := c.Request().Host
+
+		oauthState := newStateAuthCookie(host)
+		oauthState.MaxAge = -1
+		c.SetCookie(oauthState)
+
+		s, err := session.Get("default_session", c)
+		if err != nil {
+			return fmt.Errorf("error getting session: %w", err)
+		}
+		sessionID := sessionID(s)
+
+		userCache.Delete(sessionID)
+
+		return c.Redirect(http.StatusTemporaryRedirect, "/")
+	})
+
 	e.GET("/auth/google/force-approval", func(c echo.Context) error {
 		s, _ := session.Get("default_session", c)
 		sessionID := sessionID(s)
@@ -268,6 +286,8 @@ func main() {
 		if c.QueryParam("state") != oauthState.Value {
 			return fmt.Errorf("mismatched oauth google state: %s != %s", c.QueryParam("state"), oauthState.Value)
 		}
+		oauthState.MaxAge = -1
+		c.SetCookie(oauthState)
 
 		code := c.QueryParam("code")
 		if len(code) == 0 {

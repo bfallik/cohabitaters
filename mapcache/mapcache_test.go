@@ -18,4 +18,11 @@ func TestMap(t *testing.T) {
 	if 11 != got {
 		t.Errorf("expected:11, got: %v", got)
 	}
+
+	m.Delete(7)
+	got = m.Get(7)
+	//lint:ignore ST1017 want the condition order to match the format string
+	if 0 != got {
+		t.Errorf("expected:11, got: %v", got)
+	}
 }

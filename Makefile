@@ -33,3 +33,8 @@ air:
 .PHONY: image-build
 image-build:
 	podman build -t cohab-server .
+
+.PHONY: image-fedora-test-build
+image-fedora-test-build:
+	podman build -f Dockerfile.fedora -t fedora-test-build .
+	podman rmi fedora-test-build

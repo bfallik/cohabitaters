@@ -19,6 +19,8 @@ Local dev is driven from the top-level Makefile:
 cd cmd/cohab-server && go build -o ../../bin/cohab-server
 ❯ make air
 
+[Dockerfile.fedora](Dockerfile.fedora) contains an example showing the build dependencies needed for `make check` to succeed.
+
   __    _   ___
  / /\  | | | |_)
 /_/--\ |_| |_| \_ , built with Go
@@ -89,5 +91,5 @@ Prerequisite 2: create the applications secret from the downloaded OAuth2 client
 
 Then just:
 ```
-  ❯ flyctl deploy
+❯ flyctl deploy
 ```

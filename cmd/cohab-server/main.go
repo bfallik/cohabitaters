@@ -164,6 +164,7 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(session.Middleware(store))
+	e.Use(middleware.Secure())
 	e.Renderer = renderBridge{html.NewTemplater(html.Templates...)}
 
 	faHandler := http.StripPrefix("/static/fontawesome/", http.FileServer(http.FS(html.FontAwesomeFS)))

@@ -203,6 +203,10 @@ func main() {
 		return c.Render(http.StatusOK, "partials/results.html", tmplData)
 	})
 
+	e.GET("/about", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "about.html", nil)
+	})
+
 	e.GET("/error", func(c echo.Context) error {
 		return c.Render(http.StatusInternalServerError, "error.html", nil)
 	})

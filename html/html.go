@@ -19,6 +19,7 @@ var (
 		tc{name: "index.html", paths: []string{"templates/index.html", "templates/partials/*.html"}},
 		tc{name: "partials/results.html", paths: []string{"templates/partials/*.html"}},
 		tc{name: "error.html", paths: []string{"templates/error.html", "templates/partials/*.html"}},
+		tc{name: "about.html", paths: []string{"templates/about.html", "templates/partials/*.html"}},
 	)
 
 	//go:embed fontawesome-free-6.2.1-web/*

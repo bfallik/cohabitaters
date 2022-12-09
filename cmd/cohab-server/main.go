@@ -125,10 +125,10 @@ func newTmplIndexData(u UserState) html.TmplIndexData {
 	return res
 }
 
-func lookupContactGroupName(cgs []*people.ContactGroup, resName string) string {
+func lookupContactGroup(cgs []*people.ContactGroup, resName string) *people.ContactGroup {
 	for _, cg := range cgs {
 		if cg.ResourceName == resName {
-			return cg.Name
+			return cg
 		}
 	}
 	panic("resource name not found")
@@ -136,17 +136,20 @@ func lookupContactGroupName(cgs []*people.ContactGroup, resName string) string {
 
 func (u UserState) getContacts(ctx context.Context, cfg *oauth2.Config, tmplData html.TmplIndexData) (html.TmplIndexData, error) {
 	if u.Token != nil && u.Token.Valid() && len(u.SelectedResourceName) > 0 {
+		cg := lookupContactGroup(u.ContactGroups, u.SelectedResourceName)
+
 		cards, err := getContacts(ctx, cfg, u.Token, u.SelectedResourceName)
 		if err != nil {
 			if errors.Is(err, cohabitaters.ErrEmptyGroup) {
-				name := lookupContactGroupName(u.ContactGroups, u.SelectedResourceName)
-				tmplData.GroupErrorMsg = fmt.Sprintf("No contacts found in group <%s>", name)
+				tmplData.GroupErrorMsg = fmt.Sprintf("No contacts found in group <%s>", cg.Name)
 				return tmplData, nil
 			}
 			return tmplData, err
 		}
 		tmplData.TableResults = cards
 		tmplData.SelectedResourceName = u.SelectedResourceName
+		tmplData.CountContacts = int(cg.MemberCount)
+		tmplData.CountAddresses = len(cards)
 	}
 	return tmplData, nil
 }

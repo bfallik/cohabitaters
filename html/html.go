@@ -76,4 +76,6 @@ type TmplIndexData struct {
 	TableResults         []cohabitaters.XmasCard
 	SelectedResourceName string
 	GroupErrorMsg        string
+	CountContacts        int
+	CountAddresses       int
 }

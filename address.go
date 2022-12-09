@@ -79,6 +79,9 @@ func GetXmasCards(svc *people.Service, contactGroupResourceName string) ([]XmasC
 	var cards []XmasCard
 
 	for _, pr := range pplResp.Responses {
+		if len(pr.Person.Names) == 0 {
+			continue // ignore contacts without names
+		}
 		name := pr.Person.Names[0].DisplayName
 		found := false
 		homeAddr, err := PickHomeAddress(pr.Person.Addresses)

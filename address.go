@@ -1,6 +1,7 @@
 package cohabitaters
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -59,13 +60,17 @@ func FuzzyAddressMatch(a *people.Address, b Address) bool {
 		FuzzyTrimMatch(a.StreetAddress, b.StreetAddress)
 }
 
+var (
+	ErrEmptyGroup = errors.New("group is empty")
+)
+
 func GetXmasCards(svc *people.Service, contactGroupResourceName string) ([]XmasCard, error) {
 	cgResp, err := svc.ContactGroups.Get(contactGroupResourceName).MaxMembers(1000).Do()
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve contactGroup members: %w", err)
 	}
 	if len(cgResp.MemberResourceNames) == 0 {
-		return nil, fmt.Errorf("empty contactGroup members")
+		return nil, ErrEmptyGroup
 	}
 
 	pplResp, err := svc.People.GetBatchGet().ResourceNames(cgResp.MemberResourceNames...).PersonFields("names,addresses").Do()

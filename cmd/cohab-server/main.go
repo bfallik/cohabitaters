@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -124,10 +125,24 @@ func newTmplIndexData(u UserState) html.TmplIndexData {
 	return res
 }
 
+func lookupContactGroupName(cgs []*people.ContactGroup, resName string) string {
+	for _, cg := range cgs {
+		if cg.ResourceName == resName {
+			return cg.Name
+		}
+	}
+	panic("resource name not found")
+}
+
 func (u UserState) getContacts(ctx context.Context, cfg *oauth2.Config, tmplData html.TmplIndexData) (html.TmplIndexData, error) {
 	if u.Token != nil && u.Token.Valid() && len(u.SelectedResourceName) > 0 {
 		cards, err := getContacts(ctx, cfg, u.Token, u.SelectedResourceName)
 		if err != nil {
+			if errors.Is(err, cohabitaters.ErrEmptyGroup) {
+				name := lookupContactGroupName(u.ContactGroups, u.SelectedResourceName)
+				tmplData.GroupErrorMsg = fmt.Sprintf("No contacts found in group <%s>", name)
+				return tmplData, nil
+			}
 			return tmplData, err
 		}
 		tmplData.TableResults = cards

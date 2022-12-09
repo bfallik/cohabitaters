@@ -75,4 +75,5 @@ type TmplIndexData struct {
 	Groups               []*people.ContactGroup
 	TableResults         []cohabitaters.XmasCard
 	SelectedResourceName string
+	GroupErrorMsg        string
 }

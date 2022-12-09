@@ -314,6 +314,13 @@ func main() {
 			return err
 		}
 
+		userGroups := []*people.ContactGroup{}
+		for _, cg := range groupsResponse.ContactGroups {
+			if cg.GroupType == "USER_CONTACT_GROUP" {
+				userGroups = append(userGroups, cg)
+			}
+		}
+
 		s, err := session.Get("default_session", c)
 		if err != nil {
 			return fmt.Errorf("error getting session: %w", err)
@@ -323,7 +330,7 @@ func main() {
 		userState := userCache.Get(sessionID)
 		userState.Token = token
 		userState.Userinfo = userinfo
-		userState.ContactGroups = groupsResponse.ContactGroups
+		userState.ContactGroups = userGroups
 		userCache.Set(sessionID, userState)
 
 		s.Values["id"] = fmt.Sprint(sessionID)

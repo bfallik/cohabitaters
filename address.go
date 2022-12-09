@@ -36,7 +36,7 @@ func NewAddress(in *people.Address) Address {
 func PickHomeAddress(in []*people.Address) (*people.Address, error) {
 	switch {
 	case len(in) == 0:
-		return nil, fmt.Errorf("empty input")
+		return nil, nil
 	case len(in) == 1:
 		return in[0], nil
 	default:
@@ -83,7 +83,10 @@ func GetXmasCards(svc *people.Service, contactGroupResourceName string) ([]XmasC
 		found := false
 		homeAddr, err := PickHomeAddress(pr.Person.Addresses)
 		if err != nil {
-			return nil, fmt.Errorf("unable to pick home address for %s: %w", name, err)
+			return nil, fmt.Errorf("error picking home address for %s: %w", name, err)
+		}
+		if homeAddr == nil {
+			continue // unable to pick home address
 		}
 
 		for idx, card := range cards {

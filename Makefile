@@ -14,6 +14,7 @@ TARGETS := $(addprefix bin/,$(BINARIES))
 .PHONY: $(TARGETS)
 $(TARGETS): bin/%:
 	cd $(subst bin,cmd,$@) && go build -o ../../$@
+	@(go version -m $@ | grep -q build) || (echo "vcs info not found"; exit 1)
 
 .PHONY: check
 check:

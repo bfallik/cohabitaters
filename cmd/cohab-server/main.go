@@ -359,5 +359,9 @@ func main() {
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	}).Name = "redirectURL"
 
+	e.GET("/debug/buildinfo", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, struct{ BuildInfo string }{cohabitaters.BuildInfo()})
+	})
+
 	e.Logger.Fatal(e.Start(listenAddress))
 }

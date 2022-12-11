@@ -31,12 +31,10 @@ import (
 
 const defaultListenAddress = "localhost:8080"
 
-type renderBridge struct {
-	*html.Templater
-}
+type renderFunc func(w io.Writer, name string, data interface{}, c echo.Context) error
 
-func (t renderBridge) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.Templater.Render(w, name, data)
+func (f renderFunc) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	return f(w, name, data, c)
 }
 
 const oauthCookieName = "oauthStateCookie"
@@ -183,7 +181,9 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(session.Middleware(store))
 	e.Use(middleware.Secure())
-	e.Renderer = renderBridge{html.NewTemplater(html.Templates...)}
+	e.Renderer = renderFunc(func(w io.Writer, name string, data interface{}, c echo.Context) error {
+		return html.NewTemplater(html.Templates...).Render(w, name, data)
+	})
 
 	faHandler := http.StripPrefix("/static/fontawesome/", http.FileServer(http.FS(html.FontAwesomeFS)))
 	e.GET("/static/fontawesome/*", echo.WrapHandler(faHandler))

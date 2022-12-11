@@ -4,22 +4,27 @@ A little web app to generate a Christmas card address list from [Google Contacts
 
 I like to store my data centrally but Google doesn't make it easy to aggregate contacts by where they live. I don't want to send multiple cards to the same address.
 
-## Local Development
+## Architecture
 
-Cohabitaters uses several platforms and libraries.
-* [htmx](https://htmx.org/) for the front-end
+Cohabitaters uses several platforms and libraries. On the front-end:
+* [htmx](https://htmx.org/) for [HATEOS](https://htmx.org/essays/hateoas/)
+* [_hyperscript](https://hyperscript.org/) for client-side scripting
 * [Tailwind CSS](https://tailwindcss.com/) and [Flowbite](https://flowbite.com/) for CSS and basic UI components
 * [Font Awesome](https://fontawesome.com/) for icons
-* [Go](https://go.dev/) for the back-end
+
+and on the the back-end:
+* [Go](https://go.dev/) and [echo](https://echo.labstack.com/) for the web server
 * [Air](https://github.com/cosmtrek/air) for live reloading
 
-Local dev is driven from the top-level Makefile:
+Deployment uses a healthy mix of [Google Domains](https://domains.google.com/registrar/), [GCP](https://cloud.google.com/), and [fly.io](https://fly.io/).
+
+## Local Development
+
+Operations are driven from the top-level Makefile:
 ```
 ❯ make bin/cohab-server
 cd cmd/cohab-server && go build -o ../../bin/cohab-server
 ❯ make air
-
-[Dockerfile.fedora](Dockerfile.fedora) contains an example showing the build dependencies needed for `make check` to succeed.
 
   __    _   ___
  / /\  | | | |_)
@@ -50,6 +55,16 @@ see you again~
 
 ```
 
+[Dockerfile.fedora](Dockerfile.fedora) contains a verifiable script to prove the build dependencies for `make check`.
+
+```
+❯ make image-fedora-test-build
+podman build -f Dockerfile.fedora -t fedora-test-build .
+STEP 1/6: FROM fedora:37 AS builder
+STEP 2/6: WORKDIR /build
+...
+```
+
 ## Deployment
 
 This tool requires a [GCP](https://cloud.google.com/) Project for access to the [People API](https://developers.google.com/people). For simplicity, that configuration is tracked in [Terraform](https://terraform.io).
@@ -69,7 +84,7 @@ $ cd terraform && terraform import google_project_service.people_api xmas-card-a
 Use `cohab-server-dev-podman.sh`:
 
 ```
-  ❯ deploy/cohab-server-dev-podman.sh
+  ❯ ./deploy/cohab-server-dev-podman.sh
 
 ```
 
@@ -89,7 +104,7 @@ Prerequisite 2: create the applications secret from the downloaded OAuth2 client
 ❯ flyctl secrets set GOOGLE_APP_CREDENTIALS="$(< path/to/downloaded/client_secret.json)"
 ```
 
-Then just:
+To have fly.io build and deploy the image:
 ```
 ❯ flyctl deploy
 ```

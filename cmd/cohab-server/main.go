@@ -189,7 +189,10 @@ func main() {
 	e.GET("/static/fontawesome/*", echo.WrapHandler(faHandler))
 
 	e.GET("/", func(c echo.Context) error {
-		s, _ := session.Get("default_session", c)
+		s, err := session.Get("default_session", c)
+		if err != nil {
+			return fmt.Errorf("error getting session: %w", err)
+		}
 		sessionID := sessionID(s)
 		userState := userCache.Get(sessionID)
 
@@ -206,7 +209,10 @@ func main() {
 	})
 
 	e.GET("/partial/tableResults", func(c echo.Context) error {
-		s, _ := session.Get("default_session", c)
+		s, err := session.Get("default_session", c)
+		if err != nil {
+			return fmt.Errorf("error getting session: %w", err)
+		}
 		sessionID := sessionID(s)
 		userState := userCache.Get(sessionID)
 
@@ -250,9 +256,11 @@ func main() {
 			AuthCodeURL receive state that is a token to protect the user from CSRF attacks. You must always provide a non-empty string and
 			validate that it matches the the state query parameter on your redirect callback.
 		*/
-		s, _ := session.Get("default_session", c)
+		s, err := session.Get("default_session", c)
+		if err != nil {
+			return fmt.Errorf("error getting session: %w", err)
+		}
 		sessionID := sessionID(s)
-
 		userState := userCache.Get(sessionID)
 
 		var u string
@@ -283,9 +291,11 @@ func main() {
 	})
 
 	e.GET("/auth/google/force-approval", func(c echo.Context) error {
-		s, _ := session.Get("default_session", c)
+		s, err := session.Get("default_session", c)
+		if err != nil {
+			return fmt.Errorf("error getting session: %w", err)
+		}
 		sessionID := sessionID(s)
-
 		userState := userCache.Get(sessionID)
 
 		userState.GoogleForceApproval = !userState.GoogleForceApproval
@@ -344,8 +354,8 @@ func main() {
 			return fmt.Errorf("error getting session: %w", err)
 		}
 		sessionID := sessionID(s)
-
 		userState := userCache.Get(sessionID)
+
 		userState.Token = token
 		userState.Userinfo = userinfo
 		userState.ContactGroups = userGroups

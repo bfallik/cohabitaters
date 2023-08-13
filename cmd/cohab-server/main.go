@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/bfallik/cohabitaters"
+	"github.com/bfallik/cohabitaters/handlers"
 	"github.com/bfallik/cohabitaters/html"
 	"github.com/bfallik/cohabitaters/mapcache"
 	"github.com/gorilla/securecookie"
@@ -101,15 +102,7 @@ func sessionID(s *sessions.Session) int {
 	return id
 }
 
-type UserState struct {
-	GoogleForceApproval  bool
-	Token                *oauth2.Token
-	Userinfo             *oauth2_api.Userinfo
-	ContactGroups        []*people.ContactGroup
-	SelectedResourceName string
-}
-
-func newTmplIndexData(u UserState) html.TmplIndexData {
+func newTmplIndexData(u cohabitaters.UserState) html.TmplIndexData {
 	res := html.TmplIndexData{
 		WelcomeMsg:           "Welcome",
 		Groups:               u.ContactGroups,
@@ -132,7 +125,7 @@ func lookupContactGroup(cgs []*people.ContactGroup, resName string) *people.Cont
 	panic("resource name not found")
 }
 
-func (u UserState) getContacts(ctx context.Context, cfg *oauth2.Config, tmplData html.TmplIndexData) (html.TmplIndexData, error) {
+func getContactsFromUserState(ctx context.Context, u cohabitaters.UserState, cfg *oauth2.Config, tmplData html.TmplIndexData) (html.TmplIndexData, error) {
 	if u.Token != nil && u.Token.Valid() && len(u.SelectedResourceName) > 0 {
 		cg := lookupContactGroup(u.ContactGroups, u.SelectedResourceName)
 
@@ -173,7 +166,7 @@ func main() {
 	}
 	store := sessions.NewCookieStore(hashKey)
 
-	userCache := mapcache.Map[UserState]{}
+	userCache := mapcache.Map[cohabitaters.UserState]{}
 
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -182,6 +175,10 @@ func main() {
 	e.Renderer = renderFunc(func(w io.Writer, name string, data interface{}, c echo.Context) error {
 		return html.NewTemplater(html.Templates...).Render(w, name, data)
 	})
+
+	dbgHandler := handlers.Debug{
+		UserCache: &userCache,
+	}
 
 	faHandler := http.StripPrefix("/static/fontawesome/", http.FileServer(http.FS(html.FontAwesomeFS)))
 	e.GET("/static/fontawesome/*", echo.WrapHandler(faHandler))
@@ -195,7 +192,7 @@ func main() {
 		userState := userCache.Get(sessionID)
 
 		tmplData := newTmplIndexData(userState)
-		if tmplData, err = userState.getContacts(c.Request().Context(), oauthConfig, tmplData); err != nil {
+		if tmplData, err = getContactsFromUserState(c.Request().Context(), userState, oauthConfig, tmplData); err != nil {
 			return err
 		}
 
@@ -218,7 +215,7 @@ func main() {
 		userCache.Set(sessionID, userState)
 
 		tmplData := newTmplIndexData(userState)
-		if tmplData, err = userState.getContacts(c.Request().Context(), oauthConfig, tmplData); err != nil {
+		if tmplData, err = getContactsFromUserState(c.Request().Context(), userState, oauthConfig, tmplData); err != nil {
 			return err
 		}
 
@@ -367,19 +364,8 @@ func main() {
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	}).Name = "redirectURL"
 
-	e.GET("/debug/buildinfo", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, struct{ BuildInfo string }{cohabitaters.BuildInfo()})
-	})
-
-	e.GET("/debug/sessions", func(c echo.Context) error {
-		m := []int{}
-		userCache.Range(func(id int, t UserState) bool {
-			m = append(m, id)
-			return true
-		})
-
-		return c.JSON(http.StatusOK, struct{ Sessions []int }{m})
-	})
+	e.GET("/debug/buildinfo", dbgHandler.BuildInfo)
+	e.GET("/debug/sessions", dbgHandler.Sessions)
 
 	e.Logger.Fatal(e.Start(listenAddress))
 }

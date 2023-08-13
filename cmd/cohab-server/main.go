@@ -153,8 +153,6 @@ func (u UserState) getContacts(ctx context.Context, cfg *oauth2.Config, tmplData
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
-
 	log.Printf("%s", cohabitaters.BuildInfo())
 
 	listenAddress, ok := os.LookupEnv("LISTEN_ADDRESS")

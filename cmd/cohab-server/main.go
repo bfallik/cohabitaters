@@ -42,7 +42,7 @@ const oauthCookieName = "oauthStateCookie"
 func newStateAuthCookie(domain string) *http.Cookie {
 	bs := securecookie.GenerateRandomKey(32)
 	if bs == nil {
-		panic("unable to allocated random bytes")
+		panic("unable to allocate random bytes")
 	}
 
 	cookie := new(http.Cookie)

@@ -21,3 +21,10 @@ func (m *Map[T]) Set(id int, t T) {
 func (m *Map[T]) Delete(id int) {
 	m.sm.Delete(id)
 }
+
+func (m *Map[T]) Range(f func(id int, t T) bool) {
+	m.sm.Range(
+		func(key any, value any) bool {
+			return f(key.(int), value.(T))
+		})
+}

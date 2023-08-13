@@ -371,5 +371,15 @@ func main() {
 		return c.JSON(http.StatusOK, struct{ BuildInfo string }{cohabitaters.BuildInfo()})
 	})
 
+	e.GET("/debug/sessions", func(c echo.Context) error {
+		m := []int{}
+		userCache.Range(func(id int, t UserState) bool {
+			m = append(m, id)
+			return true
+		})
+
+		return c.JSON(http.StatusOK, struct{ Sessions []int }{m})
+	})
+
 	e.Logger.Fatal(e.Start(listenAddress))
 }

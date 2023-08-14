@@ -2,17 +2,14 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"math/rand"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/bfallik/cohabitaters"
 	"github.com/bfallik/cohabitaters/handlers"
@@ -25,7 +22,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	oauth2_api "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
 	"google.golang.org/api/people/v1"
 )
@@ -36,46 +32,6 @@ type renderFunc func(w io.Writer, name string, data interface{}, c echo.Context)
 
 func (f renderFunc) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
 	return f(w, name, data, c)
-}
-
-const oauthCookieName = "oauthStateCookie"
-
-func newStateAuthCookie(domain string) *http.Cookie {
-	bs := securecookie.GenerateRandomKey(32)
-	if bs == nil {
-		panic("unable to allocate random bytes")
-	}
-
-	cookie := new(http.Cookie)
-	cookie.Name = oauthCookieName
-	cookie.Value = base64.URLEncoding.EncodeToString(bs)
-	cookie.Expires = time.Now().Add(24 * time.Hour)
-	cookie.Path = "/"
-	cookie.Domain = domain
-	cookie.Secure = true
-	cookie.HttpOnly = true
-	return cookie
-}
-
-func getUserinfo(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token) (*oauth2_api.Userinfo, error) {
-	tokenSource := cfg.TokenSource(ctx, token)
-	oauth2Service, err := oauth2_api.NewService(ctx, option.WithTokenSource(tokenSource))
-	if err != nil {
-		return nil, err
-	}
-
-	userInfoService := oauth2_api.NewUserinfoV2MeService(oauth2Service)
-	return userInfoService.Get().Do()
-}
-
-func getContactGroupsList(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token) (*people.ListContactGroupsResponse, error) {
-	tokenSource := cfg.TokenSource(ctx, token)
-	srv, err := people.NewService(ctx, option.WithTokenSource(tokenSource))
-	if err != nil {
-		return nil, fmt.Errorf("unable to create people service %w", err)
-	}
-
-	return srv.ContactGroups.List().Do()
 }
 
 func getContacts(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token, contactGroupResource string) ([]cohabitaters.XmasCard, error) {
@@ -180,6 +136,11 @@ func main() {
 		UserCache: &userCache,
 	}
 
+	oauthHandler := handlers.Oauth2{
+		OauthConfig: oauthConfig,
+		UserCache:   &userCache,
+	}
+
 	faHandler := http.StripPrefix("/static/fontawesome/", http.FileServer(http.FS(html.FontAwesomeFS)))
 	e.GET("/static/fontawesome/*", echo.WrapHandler(faHandler))
 
@@ -230,139 +191,27 @@ func main() {
 		return c.Render(http.StatusInternalServerError, "error.html", nil)
 	})
 
-	e.GET("/auth/google/login", func(c echo.Context) error {
-		host := c.Request().Host
-
-		oauthState := newStateAuthCookie(host)
-		c.SetCookie(oauthState)
-
-		localConfig := oauthConfig
-		callback := url.URL{
-			Scheme: c.Request().Header.Get("X-Forwarded-Proto"),
-			Host:   host,
-			Path:   e.Reverse("redirectURL"),
-		}
-		if callback.Scheme == "" {
-			callback.Scheme = "http"
-		}
-		localConfig.RedirectURL = callback.String()
-
-		/*
-			AuthCodeURL receive state that is a token to protect the user from CSRF attacks. You must always provide a non-empty string and
-			validate that it matches the the state query parameter on your redirect callback.
-		*/
+	e.GET("/logout", func(c echo.Context) error {
 		s, err := session.Get("default_session", c)
 		if err != nil {
 			return fmt.Errorf("error getting session: %w", err)
 		}
+
+		s.Options.MaxAge = -1
+
 		sessionID := sessionID(s)
-		userState := userCache.Get(sessionID)
-
-		var u string
-		if userState.GoogleForceApproval {
-			u = localConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline, oauth2.ApprovalForce)
-		} else {
-			u = localConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline)
-		}
-		return c.Redirect(http.StatusTemporaryRedirect, u)
-	})
-
-	e.GET("/auth/google/logout", func(c echo.Context) error {
-		host := c.Request().Host
-
-		oauthState := newStateAuthCookie(host)
-		oauthState.MaxAge = -1
-		c.SetCookie(oauthState)
-
-		s, err := session.Get("default_session", c)
-		if err != nil {
-			return fmt.Errorf("error getting session: %w", err)
-		}
-		sessionID := sessionID(s)
-
 		userCache.Delete(sessionID)
 
-		return c.Redirect(http.StatusTemporaryRedirect, "/")
-	})
-
-	e.GET("/auth/google/force-approval", func(c echo.Context) error {
-		s, err := session.Get("default_session", c)
-		if err != nil {
-			return fmt.Errorf("error getting session: %w", err)
-		}
-		sessionID := sessionID(s)
-		userState := userCache.Get(sessionID)
-
-		userState.GoogleForceApproval = !userState.GoogleForceApproval
-		userCache.Set(sessionID, userState)
-
-		return c.JSON(http.StatusOK, struct{ ForceApproval bool }{userState.GoogleForceApproval})
-	})
-
-	e.GET("/auth/google/callback", func(c echo.Context) error {
-		maybeError := c.QueryParam("error")
-		if len(maybeError) > 0 {
-			return fmt.Errorf("authorization error: %s", maybeError)
-		}
-
-		oauthState, err := c.Cookie(oauthCookieName)
-		if err != nil {
-			return fmt.Errorf("unable to retrieve %s cookie: %w", oauthCookieName, err)
-		}
-
-		if c.QueryParam("state") != oauthState.Value {
-			return fmt.Errorf("mismatched oauth google state: %s != %s", c.QueryParam("state"), oauthState.Value)
-		}
-		oauthState.MaxAge = -1
-		c.SetCookie(oauthState)
-
-		code := c.QueryParam("code")
-		if len(code) == 0 {
-			return fmt.Errorf("empty code parameter")
-		}
-
-		ctx := c.Request().Context()
-		token, err := oauthConfig.Exchange(ctx, code)
-		if err != nil {
-			return fmt.Errorf("code exchange error: %w", err)
-		}
-
-		userinfo, err := getUserinfo(ctx, oauthConfig, token)
-		if err != nil {
-			return err
-		}
-
-		groupsResponse, err := getContactGroupsList(ctx, oauthConfig, token)
-		if err != nil {
-			return err
-		}
-
-		userGroups := []*people.ContactGroup{}
-		for _, cg := range groupsResponse.ContactGroups {
-			if cg.GroupType == "USER_CONTACT_GROUP" {
-				userGroups = append(userGroups, cg)
-			}
-		}
-
-		s, err := session.Get("default_session", c)
-		if err != nil {
-			return fmt.Errorf("error getting session: %w", err)
-		}
-		sessionID := sessionID(s)
-		userState := userCache.Get(sessionID)
-
-		userState.Token = token
-		userState.Userinfo = userinfo
-		userState.ContactGroups = userGroups
-		userCache.Set(sessionID, userState)
-
-		s.Values["id"] = fmt.Sprint(sessionID)
 		if err := s.Save(c.Request(), c.Response()); err != nil {
 			return err
 		}
 
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
-	}).Name = "redirectURL"
+	})
+
+	e.GET("/auth/google/callback", oauthHandler.GoogleCallback).Name = "redirectURL"
+	e.GET("/auth/google/login", oauthHandler.NewGoogleLogin(e.Reverse("redirectURL")))
+	e.GET("/auth/google/force-approval", oauthHandler.GoogleForceApproval)
 
 	e.GET("/debug/buildinfo", dbgHandler.BuildInfo)
 	e.GET("/debug/sessions", dbgHandler.Sessions)

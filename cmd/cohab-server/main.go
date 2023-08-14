@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"io"
 	"log"
 	"os"
@@ -9,7 +10,6 @@ import (
 	"github.com/bfallik/cohabitaters/handlers"
 	"github.com/bfallik/cohabitaters/html"
 	"github.com/bfallik/cohabitaters/mapcache"
-	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -41,9 +41,13 @@ func main() {
 	}
 	oauthConfig.Endpoint = google.Endpoint
 
-	hashKey := securecookie.GenerateRandomKey(32)
-	if hashKey == nil {
-		log.Fatal("unable to generate initial random keys")
+	cookieStoreKey, ok := os.LookupEnv("COOKIE_STORE_KEY")
+	if !ok {
+		log.Fatalf("empty COOKIE_STORE_KEY")
+	}
+	hashKey, err := base64.StdEncoding.DecodeString(cookieStoreKey)
+	if err != nil {
+		log.Fatalf("unable to decode COOKIE_STORE_KEY")
 	}
 	store := sessions.NewCookieStore(hashKey)
 

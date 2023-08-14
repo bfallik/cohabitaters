@@ -141,8 +141,7 @@ func main() {
 		UserCache:   &userCache,
 	}
 
-	faHandler := http.StripPrefix("/static/fontawesome/", http.FileServer(http.FS(html.FontAwesomeFS)))
-	e.GET("/static/fontawesome/*", echo.WrapHandler(faHandler))
+	e.GET("/static/fontawesome/*", handlers.FontAwesome)
 
 	e.GET("/", func(c echo.Context) error {
 		s, err := session.Get("default_session", c)

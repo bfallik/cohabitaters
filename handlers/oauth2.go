@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bfallik/cohabitaters"
@@ -45,7 +46,9 @@ func newStateAuthCookie(domain string) *http.Cookie {
 	cookie.Value = base64.URLEncoding.EncodeToString(bs)
 	cookie.Expires = time.Now().Add(24 * time.Hour)
 	cookie.Path = "/"
-	cookie.Domain = domain
+	if !strings.HasPrefix(domain, "127.0.0.1") && !strings.HasPrefix(domain, "localhost") {
+		cookie.Domain = domain
+	}
 	cookie.Secure = true
 	cookie.HttpOnly = true
 	return cookie

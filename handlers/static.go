@@ -10,3 +10,7 @@ import (
 var FontAwesome = echo.WrapHandler(
 	http.StripPrefix("/static/fontawesome/",
 		http.FileServer(http.FS(html.FontAwesomeFS))))
+
+var Tailwind = echo.WrapHandler(
+	http.StripPrefix("/static/tailwindcss/",
+		http.FileServer(http.FS(html.TailwindFS))))

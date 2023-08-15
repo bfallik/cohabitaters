@@ -76,6 +76,7 @@ func main() {
 	}
 
 	e.GET("/static/fontawesome/*", handlers.FontAwesome)
+	e.GET("/static/tailwindcss/*", handlers.Tailwind)
 
 	e.GET("/", webUIHandler.Root)
 	e.GET("/partial/tableResults", webUIHandler.PartialTableResults)

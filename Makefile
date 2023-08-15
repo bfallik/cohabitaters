@@ -2,6 +2,11 @@
  $(error "go not found in $(PATH), consider installing it")
  endif
 
+# gh release download --pattern '*linux-x64' --repo tailwindlabs/tailwindcss
+ ifeq (, $(shell which tailwindcss))
+ $(error "tailwindcss not found in $(PATH), consider installing it")
+ endif
+
 BINARIES := \
   cohab-server \
   cohabcli
@@ -39,3 +44,7 @@ image-build:
 image-fedora-test-build:
 	podman build -f Dockerfile.fedora -t fedora-test-build .
 	podman rmi fedora-test-build
+
+.PHONY: tailwind-css-output
+tailwind-css-output:
+	tailwindcss -i html/tailwindcss-src/input.css -o html/tailwindcss-dist/output.css

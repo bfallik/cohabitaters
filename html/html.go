@@ -24,12 +24,15 @@ var (
 
 	//go:embed fontawesome-free-6.2.1-web/*
 	fontAwesomeEmbed embed.FS
+	FontAwesomeFS    = mustSub(fontAwesomeEmbed, "fontawesome-free-6.2.1-web")
 
-	FontAwesomeFS = mustSub(fontAwesomeEmbed)
+	//go:embed tailwindcss-dist/*
+	tailwindEmbed embed.FS
+	TailwindFS    = mustSub(tailwindEmbed, "tailwindcss-dist")
 )
 
-func mustSub(emb fs.FS) fs.FS {
-	fa, err := fs.Sub(emb, "fontawesome-free-6.2.1-web")
+func mustSub(emb fs.FS, dir string) fs.FS {
+	fa, err := fs.Sub(emb, dir)
 	if err != nil {
 		panic(err)
 	}

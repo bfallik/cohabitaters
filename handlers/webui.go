@@ -79,6 +79,9 @@ func (w WebUI) Root(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("error getting session: %w", err)
 	}
+
+	s.Options.HttpOnly = true
+
 	sessionID := sessionID(s)
 	userState := w.UserCache.Get(sessionID)
 

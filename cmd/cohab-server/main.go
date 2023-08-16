@@ -41,15 +41,18 @@ func main() {
 	}
 	oauthConfig.Endpoint = google.Endpoint
 
-	cookieStoreKey, ok := os.LookupEnv("COOKIE_STORE_KEY")
+	cookieStoreKey, ok := os.LookupEnv("COOKIE_HASH_BLOCK_KEYS")
 	if !ok {
-		log.Fatalf("empty COOKIE_STORE_KEY")
+		log.Fatalf("empty COOKIE_HASH_BLOCK_KEYS")
 	}
-	hashKey, err := base64.StdEncoding.DecodeString(cookieStoreKey)
+	keys, err := base64.StdEncoding.DecodeString(cookieStoreKey)
 	if err != nil {
-		log.Fatalf("unable to decode COOKIE_STORE_KEY")
+		log.Fatalf("unable to decode COOKIE_HASH_BLOCK_KEYS")
 	}
-	store := sessions.NewCookieStore(hashKey)
+	if len(keys) != 96 {
+		log.Fatalf("unexpected key length: %d", len(keys))
+	}
+	store := sessions.NewCookieStore(keys[0:64], keys[64:96])
 
 	userCache := mapcache.Map[cohabitaters.UserState]{}
 

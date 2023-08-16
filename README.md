@@ -23,7 +23,7 @@ Deployment uses a healthy mix of [Google Domains](https://domains.google.com/reg
 Operations are driven from the top-level Makefile:
 ```
 ❯ make -C deploy local-cookie-store-key.txt
-openssl rand -base64 32 >local-cookie-store-key.txt
+openssl rand -base64 96 >local-cookie-store-key.txt
 ❯ make bin/cohab-server
 cd cmd/cohab-server && go build -o ../../bin/cohab-server
 ❯ make air

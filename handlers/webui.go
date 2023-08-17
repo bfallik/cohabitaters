@@ -16,6 +16,8 @@ import (
 	"google.golang.org/api/people/v1"
 )
 
+const SESSION_NAME = "default_session"
+
 func getContacts(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token, contactGroupResource string) ([]cohabitaters.XmasCard, error) {
 	tokenSource := cfg.TokenSource(ctx, token)
 	srv, err := people.NewService(ctx, option.WithTokenSource(tokenSource))
@@ -75,9 +77,9 @@ type WebUI struct {
 }
 
 func (w WebUI) Root(c echo.Context) error {
-	s, err := session.Get("default_session", c)
+	s, err := session.Get(SESSION_NAME, c)
 	if err != nil {
-		return fmt.Errorf("error getting session: %w", err)
+		c.Logger().Infof("error getting previous session: %w", err)
 	}
 
 	s.Options.HttpOnly = true
@@ -99,9 +101,9 @@ func (w WebUI) Root(c echo.Context) error {
 
 func (w WebUI) PartialTableResults(c echo.Context) error {
 
-	s, err := session.Get("default_session", c)
+	s, err := session.Get(SESSION_NAME, c)
 	if err != nil {
-		return fmt.Errorf("error getting session: %w", err)
+		c.Logger().Infof("error getting previous session: %w", err)
 	}
 	sessionID := sessionID(s)
 	userState := w.UserCache.Get(sessionID)
@@ -126,9 +128,9 @@ func (w WebUI) Error(c echo.Context) error {
 }
 
 func (w WebUI) Logout(c echo.Context) error {
-	s, err := session.Get("default_session", c)
+	s, err := session.Get(SESSION_NAME, c)
 	if err != nil {
-		return fmt.Errorf("error getting session: %w", err)
+		c.Logger().Infof("error getting previous session: %w", err)
 	}
 
 	s.Options.MaxAge = -1

@@ -5,8 +5,16 @@
 {{ template "partials/head.html" .}}
 
 <body>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <div class="flex min-h-screen w-full flex-col grow word-break">
         {{ template "partials/navbar.html" .}}
+
+        <div id="g_id_onload" data-client_id="1048297799487-pibn8vimfmlii915gn5frkjgorq3oqhn.apps.googleusercontent.com"
+            data-login_uri="{{ .LoginURL }}" data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with"
+            data-shape="rectangular" data-logo_alignment="left">
+        </div>
 
         <div class="flex flex-auto">
             {{ template "partials/sidebar.html" .}}

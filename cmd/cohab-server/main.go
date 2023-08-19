@@ -87,9 +87,11 @@ func main() {
 	e.GET("/error", webUIHandler.Error)
 	e.GET("/logout", webUIHandler.Logout)
 
-	e.GET("/auth/google/callback", oauthHandler.GoogleCallback).Name = "redirectURL"
-	e.GET("/auth/google/login", oauthHandler.NewGoogleLogin(e.Reverse("redirectURL")))
+	e.GET("/auth/google/callback", oauthHandler.GoogleCallbackAuthz).Name = handlers.RedirectURLAuthz
+	e.GET("/auth/google/login", oauthHandler.GoogleLoginAuthz)
 	e.GET("/auth/google/force-approval", oauthHandler.GoogleForceApproval)
+
+	e.POST("/authn/google/callback", oauthHandler.GoogleCallbackAuthn).Name = handlers.RedirectURLAuthn
 
 	e.GET("/debug/buildinfo", dbgHandler.BuildInfo)
 	e.GET("/debug/sessions", dbgHandler.Sessions)

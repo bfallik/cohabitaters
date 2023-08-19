@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/bfallik/cohabitaters"
 	"github.com/bfallik/cohabitaters/html"
@@ -28,9 +29,10 @@ func getContacts(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token, c
 	return cohabitaters.GetXmasCards(srv, contactGroupResource)
 }
 
-func newTmplIndexData(u cohabitaters.UserState) html.TmplIndexData {
+func newTmplIndexData(u cohabitaters.UserState, loginURL string) html.TmplIndexData {
 	res := html.TmplIndexData{
 		WelcomeMsg:           "Welcome",
+		LoginURL:             loginURL,
 		Groups:               u.ContactGroups,
 		SelectedResourceName: u.SelectedResourceName,
 	}
@@ -86,8 +88,11 @@ func (w WebUI) Root(c echo.Context) error {
 
 	sessionID := sessionID(s)
 	userState := w.UserCache.Get(sessionID)
+	u := new(url.URL)
+	u.Host = c.Request().Host
+	u.Path = c.Echo().Reverse(RedirectURLAuthn)
 
-	tmplData := newTmplIndexData(userState)
+	tmplData := newTmplIndexData(userState, u.String())
 	if tmplData, err = getContactsFromUserState(c.Request().Context(), userState, w.OauthConfig, tmplData); err != nil {
 		return err
 	}
@@ -111,7 +116,9 @@ func (w WebUI) PartialTableResults(c echo.Context) error {
 	userState.SelectedResourceName = c.QueryParam("contact-group")
 	w.UserCache.Set(sessionID, userState)
 
-	tmplData := newTmplIndexData(userState)
+	url := c.Echo().Reverse(RedirectURLAuthn)
+
+	tmplData := newTmplIndexData(userState, url)
 	if tmplData, err = getContactsFromUserState(c.Request().Context(), userState, w.OauthConfig, tmplData); err != nil {
 		return err
 	}

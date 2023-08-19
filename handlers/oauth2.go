@@ -17,12 +17,17 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
+	"google.golang.org/api/idtoken"
 	oauth2_api "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
 	"google.golang.org/api/people/v1"
 )
 
-const oauthCookieName = "oauthStateCookie"
+const (
+	oauthCookieName  = "oauthStateCookie"
+	RedirectURLAuthn = "redirectURLAuthn"
+	RedirectURLAuthz = "redirectURLAuthz"
+)
 
 func newStateAuthCookie(domain string) *http.Cookie {
 	bs := securecookie.GenerateRandomKey(32)
@@ -81,43 +86,43 @@ type Oauth2 struct {
 	UserCache   *mapcache.Map[cohabitaters.UserState]
 }
 
-func (o *Oauth2) NewGoogleLogin(redirectURL string) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		host := c.Request().Host
+func (o *Oauth2) GoogleLoginAuthz(c echo.Context) error {
+	host := c.Request().Host
 
-		oauthState := newStateAuthCookie(host)
-		c.SetCookie(oauthState)
+	oauthState := newStateAuthCookie(host)
+	c.SetCookie(oauthState)
 
-		localConfig := o.OauthConfig
-		callback := url.URL{
-			Scheme: c.Request().Header.Get("X-Forwarded-Proto"),
-			Host:   host,
-			Path:   redirectURL,
-		}
-		if callback.Scheme == "" {
-			callback.Scheme = "http"
-		}
-		localConfig.RedirectURL = callback.String()
+	redirectURL := c.Echo().Reverse(RedirectURLAuthz)
 
-		/*
-			AuthCodeURL receive state that is a token to protect the user from CSRF attacks. You must always provide a non-empty string and
-			validate that it matches the the state query parameter on your redirect callback.
-		*/
-		s, err := session.Get("default_session", c)
-		if err != nil {
-			return fmt.Errorf("error getting session: %w", err)
-		}
-		sessionID := sessionID(s)
-		userState := o.UserCache.Get(sessionID)
-
-		var u string
-		if userState.GoogleForceApproval {
-			u = localConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline, oauth2.ApprovalForce)
-		} else {
-			u = localConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline)
-		}
-		return c.Redirect(http.StatusTemporaryRedirect, u)
+	localConfig := o.OauthConfig
+	callback := url.URL{
+		Scheme: c.Request().Header.Get("X-Forwarded-Proto"),
+		Host:   host,
+		Path:   redirectURL,
 	}
+	if callback.Scheme == "" {
+		callback.Scheme = "http"
+	}
+	localConfig.RedirectURL = callback.String()
+
+	/*
+		AuthCodeURL receive state that is a token to protect the user from CSRF attacks. You must always provide a non-empty string and
+		validate that it matches the the state query parameter on your redirect callback.
+	*/
+	s, err := session.Get("default_session", c)
+	if err != nil {
+		return fmt.Errorf("error getting session: %w", err)
+	}
+	sessionID := sessionID(s)
+	userState := o.UserCache.Get(sessionID)
+
+	var u string
+	if userState.GoogleForceApproval {
+		u = localConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline, oauth2.ApprovalForce)
+	} else {
+		u = localConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline)
+	}
+	return c.Redirect(http.StatusTemporaryRedirect, u)
 }
 
 func (o *Oauth2) GoogleForceApproval(c echo.Context) error {
@@ -134,7 +139,7 @@ func (o *Oauth2) GoogleForceApproval(c echo.Context) error {
 	return c.JSON(http.StatusOK, struct{ ForceApproval bool }{userState.GoogleForceApproval})
 }
 
-func (o *Oauth2) GoogleCallback(c echo.Context) error {
+func (o *Oauth2) GoogleCallbackAuthz(c echo.Context) error {
 	maybeError := c.QueryParam("error")
 	if len(maybeError) > 0 {
 		return fmt.Errorf("authorization error: %s", maybeError)
@@ -197,4 +202,39 @@ func (o *Oauth2) GoogleCallback(c echo.Context) error {
 	}
 
 	return c.Redirect(http.StatusTemporaryRedirect, "/")
+}
+
+func (o *Oauth2) GoogleCallbackAuthn(c echo.Context) error {
+	csrfTokenCookie, err := c.Cookie("g_csrf_token")
+	if err != nil {
+		return fmt.Errorf("g_csrf_token cookie not found")
+	}
+
+	csrfTokenBody := c.FormValue("g_csrf_token")
+	if len(csrfTokenBody) == 0 {
+		return fmt.Errorf("g_csrf_token body not found")
+	}
+
+	if csrfTokenCookie.Value != csrfTokenBody {
+		return fmt.Errorf("g_csrf_token mismatch")
+	}
+
+	credential := c.FormValue("credential")
+	ctx := c.Request().Context()
+
+	clientID := "1048297799487-pibn8vimfmlii915gn5frkjgorq3oqhn.apps.googleusercontent.com"
+
+	val, err := idtoken.NewValidator(ctx)
+	if err != nil {
+		return fmt.Errorf("error creating validator: %v", err)
+	}
+
+	pay, err := val.Validate(ctx, credential, clientID)
+	if err != nil {
+		return fmt.Errorf("error creating validator: %v", err)
+	}
+
+	c.Logger().Errorf("email: %v", pay.Claims["email"])
+
+	return c.Redirect(http.StatusSeeOther, "/auth/google/login")
 }

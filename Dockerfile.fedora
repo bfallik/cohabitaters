@@ -3,8 +3,18 @@ FROM fedora:38 AS builder
 WORKDIR /build
 
 RUN dnf update -y && \
-    dnf install -y git-core golang make shellcheck which && \
+    dnf install -y git-core make shellcheck which && \
     dnf install -y https://github.com/golangci/golangci-lint/releases/download/v1.54.1/golangci-lint-1.54.1-linux-amd64.rpm
+
+ARG GO_TARBALL=go1.21.0.linux-amd64.tar.gz
+RUN curl -sLO https://go.dev/dl/${GO_TARBALL} && \
+    rm -rf /usr/local/go && \
+    tar -C /usr/local -xzf ${GO_TARBALL}
+ENV PATH="/usr/local/go/bin:$PATH"
+
+RUN curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-arm64 && \
+    chmod +x tailwindcss-linux-arm64 && \
+    mv tailwindcss-linux-arm64 /usr/local/bin/tailwindcss
 
 COPY ./ /build
 RUN go mod download

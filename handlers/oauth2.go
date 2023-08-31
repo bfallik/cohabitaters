@@ -116,12 +116,11 @@ func (o *Oauth2) GoogleLoginAuthz(c echo.Context) error {
 	sessionID := sessionID(s)
 	userState := o.UserCache.Get(sessionID)
 
-	var u string
+	opts := []oauth2.AuthCodeOption{oauth2.AccessTypeOnline}
 	if userState.GoogleForceApproval {
-		u = localConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline, oauth2.ApprovalForce)
-	} else {
-		u = localConfig.AuthCodeURL(oauthState.Value, oauth2.AccessTypeOnline)
+		opts = append(opts, oauth2.ApprovalForce)
 	}
+	u := localConfig.AuthCodeURL(oauthState.Value, opts...)
 	return c.Redirect(http.StatusTemporaryRedirect, u)
 }
 

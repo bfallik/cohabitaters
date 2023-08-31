@@ -92,18 +92,15 @@ func (o *Oauth2) GoogleLoginAuthz(c echo.Context) error {
 	oauthState := newStateAuthCookie(host)
 	c.SetCookie(oauthState)
 
-	redirectURL := c.Echo().Reverse(RedirectURLAuthz)
-
-	localConfig := o.OauthConfig
 	callback := url.URL{
 		Scheme: c.Request().Header.Get("X-Forwarded-Proto"),
 		Host:   host,
-		Path:   redirectURL,
+		Path:   c.Echo().Reverse(RedirectURLAuthz),
 	}
 	if callback.Scheme == "" {
 		callback.Scheme = "http"
 	}
-	localConfig.RedirectURL = callback.String()
+	o.OauthConfig.RedirectURL = callback.String()
 
 	/*
 		AuthCodeURL receive state that is a token to protect the user from CSRF attacks. You must always provide a non-empty string and
@@ -120,7 +117,7 @@ func (o *Oauth2) GoogleLoginAuthz(c echo.Context) error {
 	if userState.GoogleForceApproval {
 		opts = append(opts, oauth2.ApprovalForce)
 	}
-	u := localConfig.AuthCodeURL(oauthState.Value, opts...)
+	u := o.OauthConfig.AuthCodeURL(oauthState.Value, opts...)
 	return c.Redirect(http.StatusTemporaryRedirect, u)
 }
 

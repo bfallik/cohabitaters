@@ -24,8 +24,8 @@ WHERE id = ? LIMIT 1;
 
 -- name: CreateOauth2Token :one
 INSERT INTO oauth2_tokens (
-  id, access_token, token_type, refresh_token, expiry
+  id, token
 ) VALUES (
-  ?, ?, ?, ?, ?
+  ?, ?
 )
 RETURNING *;

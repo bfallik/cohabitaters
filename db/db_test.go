@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"testing"
 
 	"github.com/bfallik/cohabitaters/db/cohabdb"
@@ -25,26 +26,27 @@ func TestQueries(t *testing.T) {
 	insertedTok := oauth2.Token{
 		AccessToken: "hello",
 	}
+	insertedTokJSON, err := json.Marshal(insertedTok)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
 	_, err = queries.CreateOauth2Token(ctx, cohabdb.CreateOauth2TokenParams{
-		ID:           1,
-		AccessToken:  insertedTok.AccessToken,
-		TokenType:    insertedTok.TokenType,
-		RefreshToken: insertedTok.RefreshToken,
-		Expiry:       insertedTok.Expiry,
+		ID:    1,
+		Token: string(insertedTokJSON),
 	})
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
-	rawTok, err := queries.GetOauth2Token(ctx, 1)
+	record, err := queries.GetOauth2Token(ctx, 1)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	fetchedTok := oauth2.Token{
-		AccessToken:  rawTok.AccessToken,
-		TokenType:    rawTok.TokenType,
-		RefreshToken: rawTok.RefreshToken,
-		Expiry:       rawTok.Expiry,
+
+	var fetchedTok oauth2.Token
+	if err := json.Unmarshal([]byte(record.Token), &fetchedTok); err != nil {
+		t.Errorf("%v", err)
 	}
 
 	if insertedTok.AccessToken != fetchedTok.AccessToken {

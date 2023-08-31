@@ -7,7 +7,14 @@ args_bin = []
 bin = "./deploy/cohab-server-dev-local.sh"
 cmd = "make tailwind-css-output bin/cohab-server"
 delay = 1000
-exclude_dir = ["assets", "air-tmp", "vendor", "testdata", "terraform"]
+exclude_dir = [
+    "assets",
+    "air-tmp",
+    "vendor",
+    "testdata",
+    "terraform",
+    "db/cohabdb",
+]
 exclude_file = []
 exclude_regex = ["_test.go"]
 exclude_unchanged = false

@@ -14,22 +14,28 @@ BINARIES := \
 PATH := $(shell go env GOPATH)/bin:$(PATH)
 SHELL := env PATH=$(PATH) ${SHELL}
 
+ ifeq (, $(shell which sqlc))
+ $(error "sqlc not found in $(PATH), `go install` it")
+ endif
+
 TARGETS := $(addprefix bin/,$(BINARIES))
 
 .PHONY: $(TARGETS)
 $(TARGETS): bin/%:
+	sqlc vet && sqlc generate
 	cd $(subst bin,cmd,$@) && go build -o ../../$@
 	@(go version -m $@ | grep -q build) || (echo "vcs info not found"; exit 1)
 
 .PHONY: check
 check:
+	sqlc vet
 	go test ./...
 	golangci-lint run
 	shellcheck deploy/*.sh
 
 .PHONY: clean
 clean:
-	rm -f $(TARGETS)
+	rm -f $(TARGETS) db/cohabdb/*.go
 
 .PHONY: air
 air:

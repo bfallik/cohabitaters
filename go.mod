@@ -8,6 +8,7 @@ require (
 	github.com/labstack/echo-contrib v0.15.0
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/lithammer/fuzzysearch v1.1.5
+	github.com/mattn/go-sqlite3 v1.14.17
 	golang.org/x/oauth2 v0.11.0
 	google.golang.org/api v0.136.0
 )

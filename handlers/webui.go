@@ -29,21 +29,6 @@ func getContacts(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token, c
 	return cohabitaters.GetXmasCards(srv, contactGroupResource)
 }
 
-func newTmplIndexData(u cohabitaters.UserState, loginURL string) html.TmplIndexData {
-	res := html.TmplIndexData{
-		WelcomeMsg:           "Welcome",
-		LoginURL:             loginURL,
-		Groups:               u.ContactGroups,
-		SelectedResourceName: u.SelectedResourceName,
-	}
-
-	if u.Userinfo != nil {
-		res.WelcomeMsg = fmt.Sprintf("Welcome %s", u.Userinfo.Email)
-	}
-
-	return res
-}
-
 func lookupContactGroup(cgs []*people.ContactGroup, resName string) *people.ContactGroup {
 	for _, cg := range cgs {
 		if cg.ResourceName == resName {
@@ -92,7 +77,17 @@ func (w WebUI) Root(c echo.Context) error {
 	u.Host = c.Request().Host
 	u.Path = c.Echo().Reverse(RedirectURLAuthn)
 
-	tmplData := newTmplIndexData(userState, u.String())
+	tmplData := html.TmplIndexData{
+		WelcomeMsg:           "Welcome",
+		LoginURL:             u.String(),
+		Groups:               userState.ContactGroups,
+		SelectedResourceName: userState.SelectedResourceName,
+	}
+
+	if userState.Userinfo != nil {
+		tmplData.WelcomeMsg = fmt.Sprintf("Welcome %s", userState.Userinfo.Email)
+	}
+
 	if tmplData, err = getContactsFromUserState(c.Request().Context(), userState, w.OauthConfig, tmplData); err != nil {
 		return err
 	}
@@ -116,9 +111,11 @@ func (w WebUI) PartialTableResults(c echo.Context) error {
 	userState.SelectedResourceName = c.QueryParam("contact-group")
 	w.UserCache.Set(sessionID, userState)
 
-	url := c.Echo().Reverse(RedirectURLAuthn)
+	tmplData := html.TmplIndexData{
+		Groups:               userState.ContactGroups,
+		SelectedResourceName: userState.SelectedResourceName,
+	}
 
-	tmplData := newTmplIndexData(userState, url)
 	if tmplData, err = getContactsFromUserState(c.Request().Context(), userState, w.OauthConfig, tmplData); err != nil {
 		return err
 	}

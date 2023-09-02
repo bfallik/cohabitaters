@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	"github.com/bfallik/cohabitaters"
+	"github.com/bfallik/cohabitaters/db/cohabdb"
 	"github.com/bfallik/cohabitaters/html"
 	"github.com/bfallik/cohabitaters/mapcache"
 	"github.com/labstack/echo-contrib/session"
@@ -61,6 +62,7 @@ func getContactsFromUserState(ctx context.Context, u cohabitaters.UserState, cfg
 type WebUI struct {
 	OauthConfig *oauth2.Config
 	UserCache   *mapcache.Map[cohabitaters.UserState]
+	Queries     *cohabdb.Queries
 }
 
 func (w WebUI) Root(c echo.Context) error {

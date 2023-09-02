@@ -1,31 +1,36 @@
--- name: GetAuthor :one
-SELECT * FROM authors
+
+-- name: GetToken :one
+SELECT * FROM tokens
 WHERE id = ? LIMIT 1;
 
--- name: ListAuthors :many
-SELECT * FROM authors
-ORDER BY name;
+-- name: CreateToken :one
+INSERT INTO tokens (
+  id, user_id, token
+) VALUES (
+  ?, ?, ?
+)
+RETURNING *;
 
--- name: CreateAuthor :one
-INSERT INTO authors (
-  name, bio
+-- name: GetSession :one
+SELECT * FROM sessions
+WHERE ID = ? LIMIT 1;
+
+-- name: CreateSession :one
+INSERT INTO sessions (
+  id, user_id
 ) VALUES (
   ?, ?
 )
 RETURNING *;
 
--- name: DeleteAuthor :exec
-DELETE FROM authors
-WHERE id = ?;
+-- name: GetUser :one
+SELECT * FROM users
+WHERE ID = ? LIMIT 1;
 
--- name: GetOauth2Token :one
-SELECT * FROM oauth2_tokens
-WHERE id = ? LIMIT 1;
-
--- name: CreateOauth2Token :one
-INSERT INTO oauth2_tokens (
-  id, token
+-- name: CreateUser :one
+INSERT INTO users (
+  full_name
 ) VALUES (
-  ?, ?
+  ?
 )
 RETURNING *;

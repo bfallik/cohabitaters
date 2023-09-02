@@ -1,10 +1,18 @@
-CREATE TABLE authors (
-  id   INTEGER PRIMARY KEY,
-  name text    NOT NULL,
-  bio  text
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY,
+  full_name TEXT NOT NULL
 );
 
-CREATE TABLE oauth2_tokens (
+CREATE TABLE sessions (
   id INTEGER PRIMARY KEY,
-	token TEXT NOT NULL
-)
+  user_id INTEGER,
+  expiry DATETIME NOT NULL,
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);
+
+CREATE TABLE tokens (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+	token TEXT NOT NULL,
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);

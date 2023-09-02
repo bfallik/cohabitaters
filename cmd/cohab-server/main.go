@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"io"
 	"log"
 	"os"
 
 	"github.com/bfallik/cohabitaters"
+	dbpkg "github.com/bfallik/cohabitaters/db"
+	"github.com/bfallik/cohabitaters/db/cohabdb"
 	"github.com/bfallik/cohabitaters/handlers"
 	"github.com/bfallik/cohabitaters/html"
 	"github.com/bfallik/cohabitaters/mapcache"
@@ -56,6 +59,16 @@ func main() {
 
 	userCache := mapcache.Map[cohabitaters.UserState]{}
 
+	db, err := dbpkg.Open()
+	if err != nil {
+		log.Fatalf("database open: %v", err)
+	}
+	ctx := context.Background()
+	if err := dbpkg.CreateTables(ctx, db); err != nil {
+		log.Fatalf("unable to create tables: %v", err)
+	}
+	queries := cohabdb.New(db)
+
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(session.Middleware(store))
@@ -71,11 +84,13 @@ func main() {
 	oauthHandler := handlers.Oauth2{
 		OauthConfig: oauthConfig,
 		UserCache:   &userCache,
+		Queries:     queries,
 	}
 
 	webUIHandler := handlers.WebUI{
 		OauthConfig: oauthConfig,
 		UserCache:   &userCache,
+		Queries:     queries,
 	}
 
 	e.GET("/static/fontawesome/*", handlers.FontAwesome)

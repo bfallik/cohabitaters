@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/bfallik/cohabitaters"
+	"github.com/bfallik/cohabitaters/db/cohabdb"
 	"github.com/bfallik/cohabitaters/mapcache"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -84,6 +85,7 @@ func sessionID(s *sessions.Session) int {
 type Oauth2 struct {
 	OauthConfig *oauth2.Config
 	UserCache   *mapcache.Map[cohabitaters.UserState]
+	Queries     *cohabdb.Queries
 }
 
 func (o *Oauth2) GoogleLoginAuthz(c echo.Context) error {

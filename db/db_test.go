@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"testing"
 
@@ -13,7 +12,7 @@ import (
 func TestQueries(t *testing.T) {
 	ctx := context.Background()
 
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := Open()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -23,6 +22,11 @@ func TestQueries(t *testing.T) {
 	}
 	queries := cohabdb.New(db)
 
+	user, err := queries.CreateUser(ctx, "Test User")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
 	insertedTok := oauth2.Token{
 		AccessToken: "hello",
 	}
@@ -31,15 +35,16 @@ func TestQueries(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	_, err = queries.CreateOauth2Token(ctx, cohabdb.CreateOauth2TokenParams{
-		ID:    1,
-		Token: string(insertedTokJSON),
+	_, err = queries.CreateToken(ctx, cohabdb.CreateTokenParams{
+		ID:     1,
+		UserID: user.ID,
+		Token:  string(insertedTokJSON),
 	})
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
-	record, err := queries.GetOauth2Token(ctx, 1)
+	record, err := queries.GetToken(ctx, 1)
 	if err != nil {
 		t.Errorf("%v", err)
 	}

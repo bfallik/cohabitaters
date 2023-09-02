@@ -8,7 +8,7 @@ import (
 	"net/url"
 
 	"github.com/bfallik/cohabitaters"
-	"github.com/bfallik/cohabitaters/db/cohabdb"
+	"github.com/bfallik/cohabitaters/cohabdb"
 	"github.com/bfallik/cohabitaters/html"
 	"github.com/bfallik/cohabitaters/mapcache"
 	"github.com/labstack/echo-contrib/session"

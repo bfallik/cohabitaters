@@ -1,9 +1,9 @@
 version: 2
 sql:
   - engine: "sqlite"
-    schema: "db/sql/schema.sql"
-    queries: "db/sql/query.sql"
+    schema: "cohabdb/sql/schema.sql"
+    queries: "cohabdb/sql/query.sql"
     gen:
       go:
         package: "cohabdb"
-        out: "db/cohabdb"
+        out: "cohabdb"

@@ -1,11 +1,10 @@
-package db
+package cohabdb
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/bfallik/cohabitaters/db/cohabdb"
 	"golang.org/x/oauth2"
 )
 
@@ -20,7 +19,7 @@ func TestQueries(t *testing.T) {
 	if err := CreateTables(ctx, db); err != nil {
 		t.Errorf("%v", err)
 	}
-	queries := cohabdb.New(db)
+	queries := New(db)
 
 	user, err := queries.CreateUser(ctx, "Test User")
 	if err != nil {
@@ -35,7 +34,7 @@ func TestQueries(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	_, err = queries.CreateToken(ctx, cohabdb.CreateTokenParams{
+	_, err = queries.CreateToken(ctx, CreateTokenParams{
 		ID:     1,
 		UserID: user.ID,
 		Token:  string(insertedTokJSON),

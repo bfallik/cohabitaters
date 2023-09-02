@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/bfallik/cohabitaters"
-	"github.com/bfallik/cohabitaters/db/cohabdb"
+	"github.com/bfallik/cohabitaters/cohabdb"
 	"github.com/bfallik/cohabitaters/mapcache"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"

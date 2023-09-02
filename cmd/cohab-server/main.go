@@ -8,8 +8,7 @@ import (
 	"os"
 
 	"github.com/bfallik/cohabitaters"
-	dbpkg "github.com/bfallik/cohabitaters/db"
-	"github.com/bfallik/cohabitaters/db/cohabdb"
+	"github.com/bfallik/cohabitaters/cohabdb"
 	"github.com/bfallik/cohabitaters/handlers"
 	"github.com/bfallik/cohabitaters/html"
 	"github.com/bfallik/cohabitaters/mapcache"
@@ -59,12 +58,12 @@ func main() {
 
 	userCache := mapcache.Map[cohabitaters.UserState]{}
 
-	db, err := dbpkg.Open()
+	db, err := cohabdb.Open()
 	if err != nil {
 		log.Fatalf("database open: %v", err)
 	}
 	ctx := context.Background()
-	if err := dbpkg.CreateTables(ctx, db); err != nil {
+	if err := cohabdb.CreateTables(ctx, db); err != nil {
 		log.Fatalf("unable to create tables: %v", err)
 	}
 	queries := cohabdb.New(db)

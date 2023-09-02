@@ -22,7 +22,6 @@ TARGETS := $(addprefix bin/,$(BINARIES))
 
 .PHONY: $(TARGETS)
 $(TARGETS): bin/%:
-	sqlc vet && sqlc generate
 	cd $(subst bin,cmd,$@) && go build -o ../../$@
 	@(go version -m $@ | grep -q build) || (echo "vcs info not found"; exit 1)
 
@@ -33,9 +32,13 @@ check:
 	golangci-lint run
 	shellcheck deploy/*.sh
 
+.PHONY: generate-sqlc
+generate-sqlc:
+	sqlc vet && sqlc generate
+
 .PHONY: clean
 clean:
-	rm -f $(TARGETS) db/cohabdb/*.go
+	rm -f $(TARGETS)
 
 .PHONY: air
 air:

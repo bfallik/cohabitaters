@@ -25,9 +25,10 @@ import (
 )
 
 const (
-	oauthCookieName  = "oauthStateCookie"
-	RedirectURLAuthn = "redirectURLAuthn"
-	RedirectURLAuthz = "redirectURLAuthz"
+	oauthCookieName       = "oauthStateCookie"
+	RedirectURLAuthn      = "redirectURLAuthn"
+	RedirectURLAuthz      = "redirectURLAuthz"
+	RedirectURLAuthzLogin = "redirectURLAuthzLogin"
 )
 
 func newStateAuthCookie(domain string) *http.Cookie {
@@ -232,5 +233,5 @@ func (o *Oauth2) GoogleCallbackAuthn(c echo.Context) error {
 
 	c.Logger().Errorf("email: %v", pay.Claims["email"])
 
-	return c.Redirect(http.StatusSeeOther, "/auth/google/login")
+	return c.Redirect(http.StatusSeeOther, c.Echo().Reverse(RedirectURLAuthzLogin))
 }

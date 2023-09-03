@@ -226,7 +226,7 @@ func (o *Oauth2) GoogleCallbackAuthn(c echo.Context) error {
 		return fmt.Errorf("error creating validator: %v", err)
 	}
 
-	pay, err := val.Validate(ctx, credential, CLIENT_ID)
+	pay, err := val.Validate(ctx, credential, clientID)
 	if err != nil {
 		return fmt.Errorf("error creating validator: %v", err)
 	}

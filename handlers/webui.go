@@ -18,8 +18,8 @@ import (
 	"google.golang.org/api/people/v1"
 )
 
-const SESSION_NAME = "default_session"
-const CLIENT_ID = "1048297799487-pibn8vimfmlii915gn5frkjgorq3oqhn.apps.googleusercontent.com"
+const sessionName = "default_session"
+const clientID = "1048297799487-pibn8vimfmlii915gn5frkjgorq3oqhn.apps.googleusercontent.com"
 
 func getContacts(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token, contactGroupResource string) ([]cohabitaters.XmasCard, error) {
 	tokenSource := cfg.TokenSource(ctx, token)
@@ -67,7 +67,7 @@ type WebUI struct {
 }
 
 func (w WebUI) Root(c echo.Context) error {
-	s, err := session.Get(SESSION_NAME, c)
+	s, err := session.Get(sessionName, c)
 	if err != nil {
 		c.Logger().Infof("error getting previous session: %w", err)
 	}
@@ -83,7 +83,7 @@ func (w WebUI) Root(c echo.Context) error {
 	tmplData := html.TmplIndexData{
 		WelcomeMsg:           "Welcome",
 		LoginURL:             u.String(),
-		ClientID:             CLIENT_ID,
+		ClientID:             clientID,
 		Groups:               userState.ContactGroups,
 		SelectedResourceName: userState.SelectedResourceName,
 	}
@@ -105,7 +105,7 @@ func (w WebUI) Root(c echo.Context) error {
 
 func (w WebUI) PartialTableResults(c echo.Context) error {
 
-	s, err := session.Get(SESSION_NAME, c)
+	s, err := session.Get(sessionName, c)
 	if err != nil {
 		c.Logger().Infof("error getting previous session: %w", err)
 	}
@@ -136,7 +136,7 @@ func (w WebUI) Error(c echo.Context) error {
 }
 
 func (w WebUI) Logout(c echo.Context) error {
-	s, err := session.Get(SESSION_NAME, c)
+	s, err := session.Get(sessionName, c)
 	if err != nil {
 		c.Logger().Infof("error getting previous session: %w", err)
 	}

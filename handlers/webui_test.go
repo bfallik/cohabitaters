@@ -83,7 +83,7 @@ func TestRoot(t *testing.T) {
 	}
 
 	cookie := new(http.Cookie)
-	cookie.Name = SESSION_NAME
+	cookie.Name = sessionName
 
 	t.Run("root is valid HTML", subtester(nil))
 	t.Run("root handles invalid cookie", subtester(cookie))
@@ -91,9 +91,9 @@ func TestRoot(t *testing.T) {
 
 func containsSessionCookie(cookies []*http.Cookie) error {
 	for _, cookie := range cookies {
-		if cookie.Name == SESSION_NAME {
+		if cookie.Name == sessionName {
 			return nil
 		}
 	}
-	return fmt.Errorf("unable to find '%s' in %v", SESSION_NAME, cookies)
+	return fmt.Errorf("unable to find '%s' in %v", sessionName, cookies)
 }

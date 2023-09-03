@@ -220,14 +220,12 @@ func (o *Oauth2) GoogleCallbackAuthn(c echo.Context) error {
 	credential := c.FormValue("credential")
 	ctx := c.Request().Context()
 
-	clientID := "1048297799487-pibn8vimfmlii915gn5frkjgorq3oqhn.apps.googleusercontent.com"
-
 	val, err := idtoken.NewValidator(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating validator: %v", err)
 	}
 
-	pay, err := val.Validate(ctx, credential, clientID)
+	pay, err := val.Validate(ctx, credential, CLIENT_ID)
 	if err != nil {
 		return fmt.Errorf("error creating validator: %v", err)
 	}

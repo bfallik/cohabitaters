@@ -19,6 +19,7 @@ import (
 )
 
 const SESSION_NAME = "default_session"
+const CLIENT_ID = "1048297799487-pibn8vimfmlii915gn5frkjgorq3oqhn.apps.googleusercontent.com"
 
 func getContacts(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token, contactGroupResource string) ([]cohabitaters.XmasCard, error) {
 	tokenSource := cfg.TokenSource(ctx, token)
@@ -82,6 +83,7 @@ func (w WebUI) Root(c echo.Context) error {
 	tmplData := html.TmplIndexData{
 		WelcomeMsg:           "Welcome",
 		LoginURL:             u.String(),
+		ClientID:             CLIENT_ID,
 		Groups:               userState.ContactGroups,
 		SelectedResourceName: userState.SelectedResourceName,
 	}

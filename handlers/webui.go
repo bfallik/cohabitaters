@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 
 	"github.com/bfallik/cohabitaters"
 	"github.com/bfallik/cohabitaters/cohabdb"
@@ -31,18 +32,10 @@ func getContacts(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token, c
 	return cohabitaters.GetXmasCards(srv, contactGroupResource)
 }
 
-func lookupContactGroup(cgs []*people.ContactGroup, resName string) *people.ContactGroup {
-	for _, cg := range cgs {
-		if cg.ResourceName == resName {
-			return cg
-		}
-	}
-	panic("resource name not found")
-}
-
 func getContactsFromUserState(ctx context.Context, u cohabitaters.UserState, cfg *oauth2.Config, tmplData html.TmplIndexData) (html.TmplIndexData, error) {
 	if u.Token != nil && u.Token.Valid() && len(u.SelectedResourceName) > 0 {
-		cg := lookupContactGroup(u.ContactGroups, u.SelectedResourceName)
+		idx := slices.IndexFunc(u.ContactGroups, func(cg *people.ContactGroup) bool { return cg.ResourceName == u.SelectedResourceName })
+		cg := u.ContactGroups[idx]
 
 		cards, err := getContacts(ctx, cfg, u.Token, u.SelectedResourceName)
 		if err != nil {

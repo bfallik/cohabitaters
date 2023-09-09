@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 
 	"github.com/bfallik/cohabitaters"
@@ -90,10 +91,8 @@ func TestRoot(t *testing.T) {
 }
 
 func containsSessionCookie(cookies []*http.Cookie) error {
-	for _, cookie := range cookies {
-		if cookie.Name == sessionName {
-			return nil
-		}
+	if !slices.ContainsFunc(cookies, func(c *http.Cookie) bool { return c.Name == sessionName }) {
+		return fmt.Errorf("unable to find '%s' in %v", sessionName, cookies)
 	}
-	return fmt.Errorf("unable to find '%s' in %v", sessionName, cookies)
+	return nil
 }

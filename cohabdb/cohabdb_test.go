@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/oauth2"
 )
 
@@ -53,7 +55,7 @@ func TestQueries(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	if insertedTok.AccessToken != fetchedTok.AccessToken {
-		t.Errorf("mismatched tokens")
+	if !cmp.Equal(fetchedTok, insertedTok, cmpopts.IgnoreFields(fetchedTok, "raw", "expiryDelta")) {
+		t.Errorf("GetToken() = %+v, want %+v", fetchedTok, insertedTok)
 	}
 }

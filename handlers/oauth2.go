@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"math/rand"
+	"math"
+	"math/big"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -69,16 +71,24 @@ func getContactGroupsList(ctx context.Context, cfg *oauth2.Config, token *oauth2
 	return srv.ContactGroups.List().Do()
 }
 
+func mustRandInt() int {
+	n, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
+	if err != nil {
+		panic(fmt.Sprintf("unable to generate random int: %v", err))
+	}
+	return int(n.Int64())
+}
+
 // always returns a new or existing session ID
 func sessionID(s *sessions.Session) int {
 	idVar, ok := s.Values["id"]
 	if !ok {
-		return rand.Int()
+		return mustRandInt()
 	}
 
 	id, err := strconv.Atoi(idVar.(string))
 	if err != nil {
-		return rand.Int()
+		return mustRandInt()
 	}
 	return id
 }

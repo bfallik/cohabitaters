@@ -18,7 +18,13 @@ and on the the back-end:
 
 Deployment uses a healthy mix of [Google Domains](https://domains.google.com/registrar/), [GCP](https://cloud.google.com/), and [fly.io](https://fly.io/).
 
-## Local Development
+## Development
+
+### Standards
+
+The Go code in this project should adhere to Google's [Go Style Guide](https://google.github.io/styleguide/go/index).
+
+### Local Dev
 
 Operations are driven from the top-level Makefile:
 ```

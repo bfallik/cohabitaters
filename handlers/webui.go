@@ -32,9 +32,13 @@ func getContacts(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token, c
 	return cohabitaters.GetXmasCards(srv, contactGroupResource)
 }
 
+func contactGroupIndex(cgs []*people.ContactGroup, target string) int {
+	return slices.IndexFunc(cgs, func(cg *people.ContactGroup) bool { return cg.ResourceName == target })
+}
+
 func getContactsFromUserState(ctx context.Context, u cohabitaters.UserState, cfg *oauth2.Config, tmplData html.TmplIndexData) (html.TmplIndexData, error) {
 	if u.Token != nil && u.Token.Valid() && len(u.SelectedResourceName) > 0 {
-		idx := slices.IndexFunc(u.ContactGroups, func(cg *people.ContactGroup) bool { return cg.ResourceName == u.SelectedResourceName })
+		idx := contactGroupIndex(u.ContactGroups, u.SelectedResourceName)
 		cg := u.ContactGroups[idx]
 
 		cards, err := getContacts(ctx, cfg, u.Token, u.SelectedResourceName)

@@ -74,7 +74,7 @@ func (t *Templater) Render(w io.Writer, name string, data interface{}) error {
 }
 
 type TmplIndexData struct {
-	WelcomeMsg           string
+	WelcomeName          string
 	LoginURL             string
 	ClientID             string
 	Groups               []*people.ContactGroup

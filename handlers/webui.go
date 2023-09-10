@@ -81,7 +81,6 @@ func (w WebUI) Root(c echo.Context) error {
 	u.Path = c.Echo().Reverse(RedirectURLAuthn)
 
 	tmplData := html.TmplIndexData{
-		WelcomeMsg:           "Welcome",
 		LoginURL:             u.String(),
 		ClientID:             clientID,
 		Groups:               userState.ContactGroups,
@@ -89,7 +88,7 @@ func (w WebUI) Root(c echo.Context) error {
 	}
 
 	if userState.Userinfo != nil {
-		tmplData.WelcomeMsg = fmt.Sprintf("Welcome %s", userState.Userinfo.Email)
+		tmplData.WelcomeName = userState.Userinfo.Email
 	}
 
 	if tmplData, err = w.getContacts(c.Request().Context(), userState, tmplData); err != nil {

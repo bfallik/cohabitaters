@@ -20,7 +20,7 @@
             {{ template "partials/sidebar.html" .}}
 
             <div class="w-full p-2 bg-white">
-                <p class="text-xl py-4">{{ .WelcomeMsg }}</p>
+                <p class="text-xl py-4">Welcome{{ if .WelcomeName }}&nbsp;{{ .WelcomeName }}{{ end }}</p>
 
                 {{if .Groups}}
                 <label for="contact-groups" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Select

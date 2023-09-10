@@ -50,7 +50,6 @@ func getContactsFromUserState(ctx context.Context, u cohabitaters.UserState, cfg
 			return tmplData, err
 		}
 		tmplData.TableResults = cards
-		tmplData.SelectedResourceName = u.SelectedResourceName
 		tmplData.CountContacts = int(cg.MemberCount)
 	}
 	return tmplData, nil

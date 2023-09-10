@@ -82,5 +82,4 @@ type TmplIndexData struct {
 	SelectedResourceName string
 	GroupErrorMsg        string
 	CountContacts        int
-	CountAddresses       int
 }

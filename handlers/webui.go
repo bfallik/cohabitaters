@@ -22,9 +22,12 @@ import (
 const sessionName = "default_session"
 const clientID = "1048297799487-pibn8vimfmlii915gn5frkjgorq3oqhn.apps.googleusercontent.com"
 
-func getContacts(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token, contactGroupResource string) ([]cohabitaters.XmasCard, error) {
-	tokenSource := cfg.TokenSource(ctx, token)
-	srv, err := people.NewService(ctx, option.WithTokenSource(tokenSource))
+type googleSvcs struct {
+	TokenSource oauth2.TokenSource
+}
+
+func (gs googleSvcs) getContacts(ctx context.Context, contactGroupResource string) ([]cohabitaters.XmasCard, error) {
+	srv, err := people.NewService(ctx, option.WithTokenSource(gs.TokenSource))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create people service %w", err)
 	}
@@ -36,12 +39,19 @@ func contactGroupIndex(cgs []*people.ContactGroup, target string) int {
 	return slices.IndexFunc(cgs, func(cg *people.ContactGroup) bool { return cg.ResourceName == target })
 }
 
-func getContactsFromUserState(ctx context.Context, u cohabitaters.UserState, cfg *oauth2.Config, tmplData html.TmplIndexData) (html.TmplIndexData, error) {
+type WebUI struct {
+	OauthConfig *oauth2.Config
+	UserCache   *mapcache.Map[cohabitaters.UserState]
+	Queries     *cohabdb.Queries
+}
+
+func (w WebUI) getContacts(ctx context.Context, u cohabitaters.UserState, tmplData html.TmplIndexData) (html.TmplIndexData, error) {
 	if u.Token != nil && u.Token.Valid() && len(u.SelectedResourceName) > 0 {
 		idx := contactGroupIndex(u.ContactGroups, u.SelectedResourceName)
 		cg := u.ContactGroups[idx]
 
-		cards, err := getContacts(ctx, cfg, u.Token, u.SelectedResourceName)
+		googs := googleSvcs{TokenSource: w.OauthConfig.TokenSource(ctx, u.Token)}
+		cards, err := googs.getContacts(ctx, u.SelectedResourceName)
 		if err != nil {
 			if errors.Is(err, cohabitaters.ErrEmptyGroup) {
 				tmplData.GroupErrorMsg = fmt.Sprintf("No contacts found in group <%s>", cg.Name)
@@ -55,12 +65,6 @@ func getContactsFromUserState(ctx context.Context, u cohabitaters.UserState, cfg
 	return tmplData, nil
 }
 
-type WebUI struct {
-	OauthConfig *oauth2.Config
-	UserCache   *mapcache.Map[cohabitaters.UserState]
-	Queries     *cohabdb.Queries
-}
-
 func (w WebUI) Root(c echo.Context) error {
 	s, err := session.Get(sessionName, c)
 	if err != nil {
@@ -71,6 +75,7 @@ func (w WebUI) Root(c echo.Context) error {
 
 	sessionID := sessionID(s)
 	userState := w.UserCache.Get(sessionID)
+
 	u := new(url.URL)
 	u.Host = c.Request().Host
 	u.Path = c.Echo().Reverse(RedirectURLAuthn)
@@ -87,7 +92,7 @@ func (w WebUI) Root(c echo.Context) error {
 		tmplData.WelcomeMsg = fmt.Sprintf("Welcome %s", userState.Userinfo.Email)
 	}
 
-	if tmplData, err = getContactsFromUserState(c.Request().Context(), userState, w.OauthConfig, tmplData); err != nil {
+	if tmplData, err = w.getContacts(c.Request().Context(), userState, tmplData); err != nil {
 		return err
 	}
 
@@ -115,7 +120,7 @@ func (w WebUI) PartialTableResults(c echo.Context) error {
 		SelectedResourceName: userState.SelectedResourceName,
 	}
 
-	if tmplData, err = getContactsFromUserState(c.Request().Context(), userState, w.OauthConfig, tmplData); err != nil {
+	if tmplData, err = w.getContacts(c.Request().Context(), userState, tmplData); err != nil {
 		return err
 	}
 

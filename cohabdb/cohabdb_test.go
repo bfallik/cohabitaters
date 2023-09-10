@@ -2,6 +2,7 @@ package cohabdb
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"testing"
 
@@ -10,6 +11,60 @@ import (
 	"golang.org/x/oauth2"
 )
 
+func Test_CreateOrSelectUser(t *testing.T) {
+	ctx := context.Background()
+
+	db, err := Open()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	defer db.Close()
+
+	if err := CreateTables(ctx, db); err != nil {
+		t.Fatalf("%v", err)
+	}
+	queries := New(db)
+
+	cup0 := CreateUserParams{
+		Sub: "foo",
+		FullName: sql.NullString{
+			String: "bar",
+			Valid:  true,
+		},
+	}
+	user, err := CreateOrSelectUser(ctx, queries, cup0)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	if user.Sub != cup0.Sub {
+		t.Errorf("sub got = %v, want = %v", user.Sub, cup0.Sub)
+	}
+
+	if !cmp.Equal(user.FullName, cup0.FullName) {
+		t.Errorf("full name got = %v, want = %v", user.FullName, cup0.FullName)
+	}
+
+	cup0.FullName = sql.NullString{
+		String: "baz",
+		Valid:  true,
+	}
+
+	user, err = CreateOrSelectUser(ctx, queries, cup0)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	if user.Sub != cup0.Sub {
+		t.Errorf("sub got = %v, want = %v", user.Sub, cup0.Sub)
+	}
+
+	if !cmp.Equal(user.FullName, cup0.FullName) {
+		t.Errorf("full name got = %v, want = %v", user.FullName, cup0.FullName)
+	}
+
+}
+
 func TestQueries(t *testing.T) {
 	ctx := context.Background()
 
@@ -17,13 +72,14 @@ func TestQueries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	defer db.Close()
 
 	if err := CreateTables(ctx, db); err != nil {
 		t.Errorf("%v", err)
 	}
 	queries := New(db)
 
-	user, err := queries.CreateUser(ctx, "Test User")
+	user, err := queries.CreateUser(ctx, CreateUserParams{FullName: sql.NullString{String: "Test User", Valid: true}, Sub: "Test Sub"})
 	if err != nil {
 		t.Errorf("%v", err)
 	}

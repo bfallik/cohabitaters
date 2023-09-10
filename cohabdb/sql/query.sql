@@ -23,14 +23,24 @@ INSERT INTO sessions (
 )
 RETURNING *;
 
+-- name: ExpireSession :exec
+UPDATE sessions SET is_logged_in = false
+WHERE id = ?;
+
 -- name: GetUser :one
 SELECT * FROM users
-WHERE ID = ? LIMIT 1;
+WHERE id = ? LIMIT 1;
+
+-- name: GetUserBySub :one
+SELECT * FROM users
+WHERE sub = ? LIMIT 1;
+
 
 -- name: CreateUser :one
-INSERT INTO users (
-  full_name
+INSERT OR REPLACE INTO users (
+  full_name,
+  sub
 ) VALUES (
-  ?
+  ?, ?
 )
 RETURNING *;

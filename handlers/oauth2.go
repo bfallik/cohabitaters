@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/base64"
 	"fmt"
 	"math"
@@ -213,6 +214,50 @@ func (o *Oauth2) GoogleCallbackAuthz(c echo.Context) error {
 	return c.Redirect(http.StatusTemporaryRedirect, "/")
 }
 
+func mapGet[T any](m map[string]interface{}, key string) (T, bool) {
+	var zero T
+	v, ok := m[key]
+	if !ok {
+		return zero, false
+	}
+	ret, ok := v.(T)
+	return ret, ok
+}
+
+func claimToNullString(m map[string]interface{}, key string) (result sql.NullString) {
+	if name, ok := mapGet[string](m, key); ok { // found the key
+		result = sql.NullString{String: name, Valid: true}
+	}
+	return
+}
+
+func unmarshalClaims(m map[string]interface{}, cup *cohabdb.CreateUserParams) error {
+	sub, ok := mapGet[string](m, "sub")
+	if !ok {
+		return fmt.Errorf("sub claim not found")
+	}
+	cup.Sub = sub
+
+	cup.FullName = claimToNullString(m, "name")
+
+	return nil
+}
+
+func (o *Oauth2) LogUserIn(ctx context.Context, cup cohabdb.CreateUserParams, sessionID int) (cohabdb.Session, error) {
+	user, err := cohabdb.CreateOrSelectUser(ctx, o.Queries, cup)
+	if err != nil {
+		return cohabdb.Session{}, fmt.Errorf("error upserting user: %v", err)
+	}
+
+	return o.Queries.CreateSession(ctx, cohabdb.CreateSessionParams{
+		ID: int64(sessionID),
+		UserID: sql.NullInt64{
+			Int64: user.ID,
+			Valid: true,
+		},
+	})
+}
+
 func (o *Oauth2) GoogleCallbackAuthn(c echo.Context) error {
 	csrfTokenCookie, err := c.Cookie("g_csrf_token")
 	if err != nil {
@@ -241,7 +286,26 @@ func (o *Oauth2) GoogleCallbackAuthn(c echo.Context) error {
 		return fmt.Errorf("error creating validator: %v", err)
 	}
 
-	c.Logger().Errorf("email: %v", pay.Claims["email"])
+	var cup cohabdb.CreateUserParams
+	if err := unmarshalClaims(pay.Claims, &cup); err != nil {
+		return err
+	}
+
+	s, err := session.Get("default_session", c)
+	if err != nil {
+		return fmt.Errorf("error getting session: %w", err)
+	}
+	sessionID := sessionID(s)
+
+	_, err = o.LogUserIn(ctx, cup, sessionID)
+	if err != nil {
+		return fmt.Errorf("error logging in: %v", err)
+	}
+
+	s.Values["id"] = fmt.Sprint(sessionID)
+	if err := s.Save(c.Request(), c.Response()); err != nil {
+		return err
+	}
 
 	return c.Redirect(http.StatusSeeOther, c.Echo().Reverse(RedirectURLAuthzLogin))
 }

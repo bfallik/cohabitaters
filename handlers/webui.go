@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"slices"
+	"time"
 
 	"github.com/bfallik/cohabitaters"
 	"github.com/bfallik/cohabitaters/cohabdb"
@@ -21,6 +23,7 @@ import (
 
 const sessionName = "default_session"
 const clientID = "1048297799487-pibn8vimfmlii915gn5frkjgorq3oqhn.apps.googleusercontent.com"
+const sessionTimeout = 60 * time.Second
 
 type googleSvcs struct {
 	TokenSource oauth2.TokenSource
@@ -42,7 +45,7 @@ func contactGroupIndex(cgs []*people.ContactGroup, target string) int {
 type WebUI struct {
 	OauthConfig *oauth2.Config
 	UserCache   *mapcache.Map[cohabitaters.UserState]
-	Queries     *cohabdb.Queries
+	Queries     queryer
 }
 
 func (w WebUI) newTmplIndexData(ctx context.Context, u cohabitaters.UserState) (html.TmplIndexData, error) {
@@ -72,6 +75,37 @@ func (w WebUI) newTmplIndexData(ctx context.Context, u cohabitaters.UserState) (
 	return result, nil
 }
 
+type queryer interface {
+	ExpireSession(ctx context.Context, sessionID int64) error
+	GetSession(ctx context.Context, sessionID int64) (cohabdb.Session, error)
+}
+
+func (w WebUI) logUserOut(ctx context.Context, sessionID int) error {
+	if err := w.Queries.ExpireSession(ctx, int64(sessionID)); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func (w WebUI) isUserLoggedIn(ctx context.Context, sessionID int) (bool, error) {
+	session, err := w.Queries.GetSession(ctx, int64(sessionID))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	if !session.IsLoggedIn {
+		return false, nil
+	}
+
+	return time.Since(time.Unix(session.CreatedAt, 0)) <= sessionTimeout, nil
+}
+
 func (w WebUI) Root(c echo.Context) error {
 	s, err := session.Get(sessionName, c)
 	if err != nil {
@@ -81,20 +115,28 @@ func (w WebUI) Root(c echo.Context) error {
 	s.Options.HttpOnly = true
 
 	sessionID := sessionID(s)
-	userState := w.UserCache.Get(sessionID)
 
-	var tmplData html.TmplIndexData
-	if tmplData, err = w.newTmplIndexData(c.Request().Context(), userState); err != nil {
+	ctx := c.Request().Context()
+	isLoggedIn, err := w.isUserLoggedIn(ctx, sessionID)
+	if err != nil {
 		return err
 	}
 
+	var tmplData html.TmplIndexData
 	u := new(url.URL)
 	u.Host = c.Request().Host
 	u.Path = c.Echo().Reverse(RedirectURLAuthn)
 	tmplData.LoginURL = u.String()
 
-	if userState.Userinfo != nil {
-		tmplData.WelcomeName = userState.Userinfo.Email
+	if isLoggedIn {
+		userState := w.UserCache.Get(sessionID)
+		if tmplData, err = w.newTmplIndexData(c.Request().Context(), userState); err != nil {
+			return err
+		}
+
+		if userState.Userinfo != nil {
+			tmplData.WelcomeName = userState.Userinfo.Email
+		}
 	}
 
 	s.Values["id"] = fmt.Sprint(sessionID)
@@ -113,6 +155,15 @@ func (w WebUI) PartialTableResults(c echo.Context) error {
 	sessionID := sessionID(s)
 	userState := w.UserCache.Get(sessionID)
 
+	ctx := c.Request().Context()
+	isLoggedIn, err := w.isUserLoggedIn(ctx, sessionID)
+	if err != nil {
+		return err
+	}
+	if !isLoggedIn {
+		c.Logger().Infof("request for partial results without login session")
+		return c.Render(http.StatusUnauthorized, "error.html", nil)
+	}
 	userState.SelectedResourceName = c.QueryParam("contact-group")
 	w.UserCache.Set(sessionID, userState)
 
@@ -142,6 +193,10 @@ func (w WebUI) Logout(c echo.Context) error {
 
 	sessionID := sessionID(s)
 	w.UserCache.Delete(sessionID)
+
+	if err := w.logUserOut(c.Request().Context(), sessionID); err != nil {
+		return err
+	}
 
 	if err := s.Save(c.Request(), c.Response()); err != nil {
 		return err

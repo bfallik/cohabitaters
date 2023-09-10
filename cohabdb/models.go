@@ -6,13 +6,13 @@ package cohabdb
 
 import (
 	"database/sql"
-	"time"
 )
 
 type Session struct {
-	ID     int64
-	UserID sql.NullInt64
-	Expiry time.Time
+	ID         int64
+	UserID     sql.NullInt64
+	CreatedAt  int64
+	IsLoggedIn bool
 }
 
 type Token struct {
@@ -23,5 +23,6 @@ type Token struct {
 
 type User struct {
 	ID       int64
-	FullName string
+	Sub      string
+	FullName sql.NullString
 }

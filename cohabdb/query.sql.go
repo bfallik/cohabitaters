@@ -16,7 +16,7 @@ INSERT INTO sessions (
 ) VALUES (
   ?, ?
 )
-RETURNING id, user_id, expiry
+RETURNING id, user_id, created_at, is_logged_in
 `
 
 type CreateSessionParams struct {
@@ -27,7 +27,12 @@ type CreateSessionParams struct {
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error) {
 	row := q.db.QueryRowContext(ctx, createSession, arg.ID, arg.UserID)
 	var i Session
-	err := row.Scan(&i.ID, &i.UserID, &i.Expiry)
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.IsLoggedIn,
+	)
 	return i, err
 }
 
@@ -54,30 +59,51 @@ func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (Token
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (
-  full_name
+INSERT OR REPLACE INTO users (
+  full_name,
+  sub
 ) VALUES (
-  ?
+  ?, ?
 )
-RETURNING id, full_name
+RETURNING id, sub, full_name
 `
 
-func (q *Queries) CreateUser(ctx context.Context, fullName string) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, fullName)
+type CreateUserParams struct {
+	FullName sql.NullString
+	Sub      string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, createUser, arg.FullName, arg.Sub)
 	var i User
-	err := row.Scan(&i.ID, &i.FullName)
+	err := row.Scan(&i.ID, &i.Sub, &i.FullName)
 	return i, err
 }
 
+const expireSession = `-- name: ExpireSession :exec
+UPDATE sessions SET is_logged_in = false
+WHERE id = ?
+`
+
+func (q *Queries) ExpireSession(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, expireSession, id)
+	return err
+}
+
 const getSession = `-- name: GetSession :one
-SELECT id, user_id, expiry FROM sessions
+SELECT id, user_id, created_at, is_logged_in FROM sessions
 WHERE ID = ? LIMIT 1
 `
 
 func (q *Queries) GetSession(ctx context.Context, id int64) (Session, error) {
 	row := q.db.QueryRowContext(ctx, getSession, id)
 	var i Session
-	err := row.Scan(&i.ID, &i.UserID, &i.Expiry)
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.IsLoggedIn,
+	)
 	return i, err
 }
 
@@ -94,13 +120,25 @@ func (q *Queries) GetToken(ctx context.Context, id int64) (Token, error) {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, full_name FROM users
-WHERE ID = ? LIMIT 1
+SELECT id, sub, full_name FROM users
+WHERE id = ? LIMIT 1
 `
 
 func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUser, id)
 	var i User
-	err := row.Scan(&i.ID, &i.FullName)
+	err := row.Scan(&i.ID, &i.Sub, &i.FullName)
+	return i, err
+}
+
+const getUserBySub = `-- name: GetUserBySub :one
+SELECT id, sub, full_name FROM users
+WHERE sub = ? LIMIT 1
+`
+
+func (q *Queries) GetUserBySub(ctx context.Context, sub string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserBySub, sub)
+	var i User
+	err := row.Scan(&i.ID, &i.Sub, &i.FullName)
 	return i, err
 }

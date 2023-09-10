@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/bfallik/cohabitaters"
+	"github.com/bfallik/cohabitaters/cohabdb"
 	"github.com/bfallik/cohabitaters/html"
 	"github.com/bfallik/cohabitaters/mapcache"
 	"github.com/gorilla/sessions"
@@ -39,11 +41,19 @@ func isValidHTML(r io.Reader) error {
 	}
 }
 
+type mockSessioner struct{}
+
+func (ms mockSessioner) ExpireSession(ctx context.Context, sessionID int64) error { return nil }
+func (ms mockSessioner) GetSession(ctx context.Context, sessionID int64) (cohabdb.Session, error) {
+	return cohabdb.Session{}, nil
+}
+
 func TestRoot(t *testing.T) {
 	e := echo.New()
 	e.Renderer = renderFunc(func(w io.Writer, name string, data interface{}, c echo.Context) error {
 		return html.NewTemplater(html.Templates...).Render(w, name, data)
 	})
+	sess := mockSessioner{}
 
 	subtester := func(cookie *http.Cookie) func(t *testing.T) {
 		return func(t *testing.T) {
@@ -62,6 +72,7 @@ func TestRoot(t *testing.T) {
 			userCache := mapcache.Map[cohabitaters.UserState]{}
 			h := &WebUI{
 				UserCache: &userCache,
+				Queries:   sess,
 			}
 
 			if err := h.Root(c); err != nil {

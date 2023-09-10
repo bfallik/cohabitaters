@@ -45,7 +45,13 @@ type WebUI struct {
 	Queries     *cohabdb.Queries
 }
 
-func (w WebUI) getContacts(ctx context.Context, u cohabitaters.UserState, tmplData html.TmplIndexData) (html.TmplIndexData, error) {
+func (w WebUI) newTmplIndexData(ctx context.Context, u cohabitaters.UserState) (html.TmplIndexData, error) {
+	result := html.TmplIndexData{
+		ClientID:             clientID,
+		Groups:               u.ContactGroups,
+		SelectedResourceName: u.SelectedResourceName,
+	}
+
 	if u.Token != nil && u.Token.Valid() && len(u.SelectedResourceName) > 0 {
 		idx := contactGroupIndex(u.ContactGroups, u.SelectedResourceName)
 		cg := u.ContactGroups[idx]
@@ -54,15 +60,16 @@ func (w WebUI) getContacts(ctx context.Context, u cohabitaters.UserState, tmplDa
 		cards, err := googs.getContacts(ctx, u.SelectedResourceName)
 		if err != nil {
 			if errors.Is(err, cohabitaters.ErrEmptyGroup) {
-				tmplData.GroupErrorMsg = fmt.Sprintf("No contacts found in group <%s>", cg.Name)
-				return tmplData, nil
+				result.GroupErrorMsg = fmt.Sprintf("No contacts found in group <%s>", cg.Name)
+				return result, nil
 			}
-			return tmplData, err
+			return result, err
 		}
-		tmplData.TableResults = cards
-		tmplData.CountContacts = int(cg.MemberCount)
+		result.TableResults = cards
+		result.CountContacts = int(cg.MemberCount)
 	}
-	return tmplData, nil
+
+	return result, nil
 }
 
 func (w WebUI) Root(c echo.Context) error {
@@ -76,23 +83,18 @@ func (w WebUI) Root(c echo.Context) error {
 	sessionID := sessionID(s)
 	userState := w.UserCache.Get(sessionID)
 
+	var tmplData html.TmplIndexData
+	if tmplData, err = w.newTmplIndexData(c.Request().Context(), userState); err != nil {
+		return err
+	}
+
 	u := new(url.URL)
 	u.Host = c.Request().Host
 	u.Path = c.Echo().Reverse(RedirectURLAuthn)
-
-	tmplData := html.TmplIndexData{
-		LoginURL:             u.String(),
-		ClientID:             clientID,
-		Groups:               userState.ContactGroups,
-		SelectedResourceName: userState.SelectedResourceName,
-	}
+	tmplData.LoginURL = u.String()
 
 	if userState.Userinfo != nil {
 		tmplData.WelcomeName = userState.Userinfo.Email
-	}
-
-	if tmplData, err = w.getContacts(c.Request().Context(), userState, tmplData); err != nil {
-		return err
 	}
 
 	s.Values["id"] = fmt.Sprint(sessionID)
@@ -114,12 +116,8 @@ func (w WebUI) PartialTableResults(c echo.Context) error {
 	userState.SelectedResourceName = c.QueryParam("contact-group")
 	w.UserCache.Set(sessionID, userState)
 
-	tmplData := html.TmplIndexData{
-		Groups:               userState.ContactGroups,
-		SelectedResourceName: userState.SelectedResourceName,
-	}
-
-	if tmplData, err = w.getContacts(c.Request().Context(), userState, tmplData); err != nil {
+	var tmplData html.TmplIndexData
+	if tmplData, err = w.newTmplIndexData(c.Request().Context(), userState); err != nil {
 		return err
 	}
 

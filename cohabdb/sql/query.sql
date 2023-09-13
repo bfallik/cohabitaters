@@ -1,15 +1,19 @@
 
 -- name: GetToken :one
-SELECT * FROM tokens
-WHERE id = ? LIMIT 1;
+SELECT token FROM users u
+INNER JOIN sessions s
+ON u.id = s.user_id
+WHERE s.id = ? LIMIT 1;
 
--- name: CreateToken :one
-INSERT INTO tokens (
-  id, user_id, token
-) VALUES (
-  ?, ?, ?
-)
-RETURNING *;
+-- name: UpdateTokenBySession :exec
+UPDATE users
+SET token = ?
+WHERE (
+  SELECT user_id
+  FROM sessions
+  WHERE sessions.id = ?
+  AND users.id = user_id
+);
 
 -- name: GetSession :one
 SELECT * FROM sessions
@@ -24,7 +28,8 @@ INSERT INTO sessions (
 RETURNING *;
 
 -- name: ExpireSession :exec
-UPDATE sessions SET is_logged_in = false
+UPDATE sessions
+SET is_logged_in = false
 WHERE id = ?;
 
 -- name: GetUser :one

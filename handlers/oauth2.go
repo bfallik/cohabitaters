@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/big"
@@ -149,6 +150,23 @@ func (o *Oauth2) GoogleForceApproval(c echo.Context) error {
 	return c.JSON(http.StatusOK, struct{ ForceApproval bool }{userState.GoogleForceApproval})
 }
 
+func (o *Oauth2) setGoogleToken(ctx context.Context, sessionID int, tok *oauth2.Token) error {
+	bs, err := json.Marshal(tok)
+	if err != nil {
+		return err
+	}
+
+	utp := cohabdb.UpdateTokenBySessionParams{
+		ID:    int64(sessionID),
+		Token: sql.NullString{String: string(bs), Valid: true},
+	}
+	if err := o.Queries.UpdateTokenBySession(ctx, utp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (o *Oauth2) GoogleCallbackAuthz(c echo.Context) error {
 	maybeError := c.QueryParam("error")
 	if len(maybeError) > 0 {
@@ -201,10 +219,13 @@ func (o *Oauth2) GoogleCallbackAuthz(c echo.Context) error {
 	sessionID := sessionID(s)
 	userState := o.UserCache.Get(sessionID)
 
-	userState.Token = token
 	userState.Userinfo = userinfo
 	userState.ContactGroups = userGroups
 	o.UserCache.Set(sessionID, userState)
+
+	if err := o.setGoogleToken(ctx, sessionID, token); err != nil {
+		return fmt.Errorf("error saving token: %w", err)
+	}
 
 	s.Values["id"] = fmt.Sprint(sessionID)
 	if err := s.Save(c.Request(), c.Response()); err != nil {

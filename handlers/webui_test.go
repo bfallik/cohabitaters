@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -46,6 +47,9 @@ type mockSessioner struct{}
 func (ms mockSessioner) ExpireSession(ctx context.Context, sessionID int64) error { return nil }
 func (ms mockSessioner) GetSession(ctx context.Context, sessionID int64) (cohabdb.Session, error) {
 	return cohabdb.Session{}, nil
+}
+func (ms mockSessioner) GetToken(ctx context.Context, userID int64) (sql.NullString, error) {
+	return sql.NullString{}, nil
 }
 
 func TestRoot(t *testing.T) {

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -48,18 +49,18 @@ type WebUI struct {
 	Queries     queryer
 }
 
-func (w WebUI) newTmplIndexData(ctx context.Context, u cohabitaters.UserState) (html.TmplIndexData, error) {
+func (w WebUI) newTmplIndexData(ctx context.Context, u cohabitaters.UserState, tok *oauth2.Token) (html.TmplIndexData, error) {
 	result := html.TmplIndexData{
 		ClientID:             clientID,
 		Groups:               u.ContactGroups,
 		SelectedResourceName: u.SelectedResourceName,
 	}
 
-	if u.Token != nil && u.Token.Valid() && len(u.SelectedResourceName) > 0 {
+	if tok.Valid() && len(u.SelectedResourceName) > 0 {
 		idx := contactGroupIndex(u.ContactGroups, u.SelectedResourceName)
 		cg := u.ContactGroups[idx]
 
-		googs := googleSvcs{TokenSource: w.OauthConfig.TokenSource(ctx, u.Token)}
+		googs := googleSvcs{TokenSource: w.OauthConfig.TokenSource(ctx, tok)}
 		cards, err := googs.getContacts(ctx, u.SelectedResourceName)
 		if err != nil {
 			if errors.Is(err, cohabitaters.ErrEmptyGroup) {
@@ -78,6 +79,7 @@ func (w WebUI) newTmplIndexData(ctx context.Context, u cohabitaters.UserState) (
 type queryer interface {
 	ExpireSession(ctx context.Context, sessionID int64) error
 	GetSession(ctx context.Context, sessionID int64) (cohabdb.Session, error)
+	GetToken(ctx context.Context, sessionID int64) (sql.NullString, error)
 }
 
 func (w WebUI) logUserOut(ctx context.Context, sessionID int) error {
@@ -105,6 +107,16 @@ func (w WebUI) isUserLoggedIn(ctx context.Context, sessionID int) (bool, error) 
 
 	return time.Since(time.Unix(session.CreatedAt, 0)) <= sessionTimeout, nil
 }
+func (w WebUI) getGoogleToken(ctx context.Context, sessionID int) (*oauth2.Token, error) {
+	tokenText, err := w.Queries.GetToken(ctx, int64(sessionID))
+	if err != nil {
+		return nil, err
+	}
+
+	tok := oauth2.Token{}
+	err = json.Unmarshal([]byte(tokenText.String), &tok)
+	return &tok, err
+}
 
 func (w WebUI) Root(c echo.Context) error {
 	s, err := session.Get(sessionName, c)
@@ -130,7 +142,11 @@ func (w WebUI) Root(c echo.Context) error {
 
 	if isLoggedIn {
 		userState := w.UserCache.Get(sessionID)
-		if tmplData, err = w.newTmplIndexData(c.Request().Context(), userState); err != nil {
+		token, err := w.getGoogleToken(ctx, sessionID)
+		if err != nil {
+			return err
+		}
+		if tmplData, err = w.newTmplIndexData(c.Request().Context(), userState, token); err != nil {
 			return err
 		}
 
@@ -167,8 +183,13 @@ func (w WebUI) PartialTableResults(c echo.Context) error {
 	userState.SelectedResourceName = c.QueryParam("contact-group")
 	w.UserCache.Set(sessionID, userState)
 
+	token, err := w.getGoogleToken(ctx, sessionID)
+	if err != nil {
+		return err
+	}
+
 	var tmplData html.TmplIndexData
-	if tmplData, err = w.newTmplIndexData(c.Request().Context(), userState); err != nil {
+	if tmplData, err = w.newTmplIndexData(c.Request().Context(), userState, token); err != nil {
 		return err
 	}
 

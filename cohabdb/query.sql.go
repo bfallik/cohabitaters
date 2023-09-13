@@ -36,28 +36,6 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 	return i, err
 }
 
-const createToken = `-- name: CreateToken :one
-INSERT INTO tokens (
-  id, user_id, token
-) VALUES (
-  ?, ?, ?
-)
-RETURNING id, user_id, token
-`
-
-type CreateTokenParams struct {
-	ID     int64
-	UserID int64
-	Token  string
-}
-
-func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (Token, error) {
-	row := q.db.QueryRowContext(ctx, createToken, arg.ID, arg.UserID, arg.Token)
-	var i Token
-	err := row.Scan(&i.ID, &i.UserID, &i.Token)
-	return i, err
-}
-
 const createUser = `-- name: CreateUser :one
 INSERT OR REPLACE INTO users (
   full_name,
@@ -65,7 +43,7 @@ INSERT OR REPLACE INTO users (
 ) VALUES (
   ?, ?
 )
-RETURNING id, sub, full_name
+RETURNING id, sub, full_name, token
 `
 
 type CreateUserParams struct {
@@ -76,12 +54,18 @@ type CreateUserParams struct {
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, createUser, arg.FullName, arg.Sub)
 	var i User
-	err := row.Scan(&i.ID, &i.Sub, &i.FullName)
+	err := row.Scan(
+		&i.ID,
+		&i.Sub,
+		&i.FullName,
+		&i.Token,
+	)
 	return i, err
 }
 
 const expireSession = `-- name: ExpireSession :exec
-UPDATE sessions SET is_logged_in = false
+UPDATE sessions
+SET is_logged_in = false
 WHERE id = ?
 `
 
@@ -108,37 +92,70 @@ func (q *Queries) GetSession(ctx context.Context, id int64) (Session, error) {
 }
 
 const getToken = `-- name: GetToken :one
-SELECT id, user_id, token FROM tokens
-WHERE id = ? LIMIT 1
+SELECT token FROM users u
+INNER JOIN sessions s
+ON u.id = s.user_id
+WHERE s.id = ? LIMIT 1
 `
 
-func (q *Queries) GetToken(ctx context.Context, id int64) (Token, error) {
+func (q *Queries) GetToken(ctx context.Context, id int64) (sql.NullString, error) {
 	row := q.db.QueryRowContext(ctx, getToken, id)
-	var i Token
-	err := row.Scan(&i.ID, &i.UserID, &i.Token)
-	return i, err
+	var token sql.NullString
+	err := row.Scan(&token)
+	return token, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, sub, full_name FROM users
+SELECT id, sub, full_name, token FROM users
 WHERE id = ? LIMIT 1
 `
 
 func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUser, id)
 	var i User
-	err := row.Scan(&i.ID, &i.Sub, &i.FullName)
+	err := row.Scan(
+		&i.ID,
+		&i.Sub,
+		&i.FullName,
+		&i.Token,
+	)
 	return i, err
 }
 
 const getUserBySub = `-- name: GetUserBySub :one
-SELECT id, sub, full_name FROM users
+SELECT id, sub, full_name, token FROM users
 WHERE sub = ? LIMIT 1
 `
 
 func (q *Queries) GetUserBySub(ctx context.Context, sub string) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUserBySub, sub)
 	var i User
-	err := row.Scan(&i.ID, &i.Sub, &i.FullName)
+	err := row.Scan(
+		&i.ID,
+		&i.Sub,
+		&i.FullName,
+		&i.Token,
+	)
 	return i, err
+}
+
+const updateTokenBySession = `-- name: UpdateTokenBySession :exec
+UPDATE users
+SET token = ?
+WHERE (
+  SELECT user_id
+  FROM sessions
+  WHERE sessions.id = ?
+  AND users.id = user_id
+)
+`
+
+type UpdateTokenBySessionParams struct {
+	Token sql.NullString
+	ID    int64
+}
+
+func (q *Queries) UpdateTokenBySession(ctx context.Context, arg UpdateTokenBySessionParams) error {
+	_, err := q.db.ExecContext(ctx, updateTokenBySession, arg.Token, arg.ID)
+	return err
 }

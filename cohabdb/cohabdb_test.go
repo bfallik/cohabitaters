@@ -92,22 +92,29 @@ func TestQueries(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	_, err = queries.CreateToken(ctx, CreateTokenParams{
-		ID:     1,
-		UserID: user.ID,
-		Token:  string(insertedTokJSON),
+	csp := CreateSessionParams{
+		UserID: sql.NullInt64{Int64: user.ID, Valid: true},
+	}
+	session, err := queries.CreateSession(ctx, csp)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	err = queries.UpdateTokenBySession(ctx, UpdateTokenBySessionParams{
+		ID:    session.ID, // need to name this argument
+		Token: sql.NullString{String: string(insertedTokJSON), Valid: true},
 	})
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
-	record, err := queries.GetToken(ctx, 1)
+	record, err := queries.GetToken(ctx, session.ID)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
 	var fetchedTok oauth2.Token
-	if err := json.Unmarshal([]byte(record.Token), &fetchedTok); err != nil {
+	if err := json.Unmarshal([]byte(record.String), &fetchedTok); err != nil {
 		t.Errorf("%v", err)
 	}
 

@@ -15,14 +15,9 @@ type Session struct {
 	IsLoggedIn bool
 }
 
-type Token struct {
-	ID     int64
-	UserID int64
-	Token  string
-}
-
 type User struct {
 	ID       int64
 	Sub      string
 	FullName sql.NullString
+	Token    sql.NullString
 }

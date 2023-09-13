@@ -115,10 +115,6 @@ func (o *Oauth2) GoogleLoginAuthz(c echo.Context) error {
 	}
 	o.OauthConfig.RedirectURL = callback.String()
 
-	/*
-		AuthCodeURL receive state that is a token to protect the user from CSRF attacks. You must always provide a non-empty string and
-		validate that it matches the the state query parameter on your redirect callback.
-	*/
 	s, err := session.Get("default_session", c)
 	if err != nil {
 		return fmt.Errorf("error getting session: %w", err)
@@ -126,6 +122,10 @@ func (o *Oauth2) GoogleLoginAuthz(c echo.Context) error {
 	sessionID := sessionID(s)
 	userState := o.UserCache.Get(sessionID)
 
+	/*
+		AuthCodeURL receive state that is a token to protect the user from CSRF attacks. You must always provide a non-empty string and
+		validate that it matches the the state query parameter on your redirect callback.
+	*/
 	opts := []oauth2.AuthCodeOption{oauth2.AccessTypeOnline}
 	if userState.GoogleForceApproval {
 		opts = append(opts, oauth2.ApprovalForce)

@@ -22,7 +22,7 @@ Deployment uses a healthy mix of [Google Domains](https://domains.google.com/reg
 
 ### Standards
 
-The Go code in this project should adhere to Google's [Go Style Guide](https://google.github.io/styleguide/go/index).
+The Go code in this project should adhere to Google's [Go Style Guide](https://google.github.io/styleguide/go/index) and [CodeReviewComments](https://github.com/golang/go/wiki/CodeReviewComments).
 
 ### Local Dev
 

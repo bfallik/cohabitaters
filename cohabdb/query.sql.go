@@ -38,26 +38,29 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 
 const createUser = `-- name: CreateUser :one
 INSERT OR REPLACE INTO users (
-  full_name,
-  sub
+  sub,
+  name,
+  picture
 ) VALUES (
-  ?, ?
+  ?, ?, ?
 )
-RETURNING id, sub, full_name, token
+RETURNING id, sub, name, picture, token
 `
 
 type CreateUserParams struct {
-	FullName sql.NullString
-	Sub      string
+	Sub     string
+	Name    sql.NullString
+	Picture sql.NullString
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.FullName, arg.Sub)
+	row := q.db.QueryRowContext(ctx, createUser, arg.Sub, arg.Name, arg.Picture)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Sub,
-		&i.FullName,
+		&i.Name,
+		&i.Picture,
 		&i.Token,
 	)
 	return i, err
@@ -106,7 +109,7 @@ func (q *Queries) GetToken(ctx context.Context, id int64) (sql.NullString, error
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, sub, full_name, token FROM users
+SELECT id, sub, name, picture, token FROM users
 WHERE id = ? LIMIT 1
 `
 
@@ -116,14 +119,35 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.Sub,
-		&i.FullName,
+		&i.Name,
+		&i.Picture,
+		&i.Token,
+	)
+	return i, err
+}
+
+const getUserBySession = `-- name: GetUserBySession :one
+SELECT u.id, u.sub, u.name, u.picture, u.token FROM users u
+INNER JOIN sessions s
+WHERE u.id = s.user_id
+AND s.id = ? LIMIT 1
+`
+
+func (q *Queries) GetUserBySession(ctx context.Context, id int64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserBySession, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Sub,
+		&i.Name,
+		&i.Picture,
 		&i.Token,
 	)
 	return i, err
 }
 
 const getUserBySub = `-- name: GetUserBySub :one
-SELECT id, sub, full_name, token FROM users
+SELECT id, sub, name, picture, token FROM users
 WHERE sub = ? LIMIT 1
 `
 
@@ -133,7 +157,8 @@ func (q *Queries) GetUserBySub(ctx context.Context, sub string) (User, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.Sub,
-		&i.FullName,
+		&i.Name,
+		&i.Picture,
 		&i.Token,
 	)
 	return i, err

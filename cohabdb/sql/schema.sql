@@ -1,7 +1,8 @@
 CREATE TABLE users (
   id INTEGER PRIMARY KEY,
   sub TEXT UNIQUE NOT NULL,
-  full_name TEXT,
+  name TEXT,
+  picture TEXT,
   token TEXT
 );
 

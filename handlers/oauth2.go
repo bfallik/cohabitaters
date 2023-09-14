@@ -23,7 +23,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/idtoken"
-	oauth2_api "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
 	"google.golang.org/api/people/v1"
 )
@@ -50,17 +49,6 @@ func newStateAuthCookie(domain string) *http.Cookie {
 	cookie.Secure = true
 	cookie.HttpOnly = true
 	return cookie
-}
-
-func getUserinfo(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token) (*oauth2_api.Userinfo, error) {
-	tokenSource := cfg.TokenSource(ctx, token)
-	oauth2Service, err := oauth2_api.NewService(ctx, option.WithTokenSource(tokenSource))
-	if err != nil {
-		return nil, err
-	}
-
-	userInfoService := oauth2_api.NewUserinfoV2MeService(oauth2Service)
-	return userInfoService.Get().Do()
 }
 
 func getContactGroupsList(ctx context.Context, cfg *oauth2.Config, token *oauth2.Token) (*people.ListContactGroupsResponse, error) {
@@ -195,11 +183,6 @@ func (o *Oauth2) GoogleCallbackAuthz(c echo.Context) error {
 		return fmt.Errorf("code exchange error: %w", err)
 	}
 
-	userinfo, err := getUserinfo(ctx, o.OauthConfig, token)
-	if err != nil {
-		return err
-	}
-
 	groupsResponse, err := getContactGroupsList(ctx, o.OauthConfig, token)
 	if err != nil {
 		return err
@@ -219,7 +202,6 @@ func (o *Oauth2) GoogleCallbackAuthz(c echo.Context) error {
 	sessionID := sessionID(s)
 	userState := o.UserCache.Get(sessionID)
 
-	userState.Userinfo = userinfo
 	userState.ContactGroups = userGroups
 	o.UserCache.Set(sessionID, userState)
 
@@ -259,7 +241,8 @@ func unmarshalClaims(m map[string]interface{}, cup *cohabdb.CreateUserParams) er
 	}
 	cup.Sub = sub
 
-	cup.FullName = claimToNullString(m, "name")
+	cup.Name = claimToNullString(m, "name")
+	cup.Picture = claimToNullString(m, "picture")
 
 	return nil
 }

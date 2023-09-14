@@ -80,6 +80,7 @@ type queryer interface {
 	ExpireSession(ctx context.Context, sessionID int64) error
 	GetSession(ctx context.Context, sessionID int64) (cohabdb.Session, error)
 	GetToken(ctx context.Context, sessionID int64) (sql.NullString, error)
+	GetUserBySession(ctx context.Context, sessionID int64) (cohabdb.User, error)
 }
 
 func (w WebUI) logUserOut(ctx context.Context, sessionID int) error {
@@ -107,6 +108,20 @@ func (w WebUI) isUserLoggedIn(ctx context.Context, sessionID int) (bool, error) 
 
 	return time.Since(time.Unix(session.CreatedAt, 0)) <= sessionTimeout, nil
 }
+
+func (w WebUI) getUserName(ctx context.Context, sessionID int) (sql.NullString, error) {
+	user, err := w.Queries.GetUserBySession(ctx, int64(sessionID))
+	if err != nil {
+		return sql.NullString{}, err
+	}
+
+	if !user.Name.Valid {
+		return sql.NullString{}, err
+	}
+
+	return user.Name, err
+}
+
 func (w WebUI) getGoogleToken(ctx context.Context, sessionID int) (*oauth2.Token, error) {
 	tokenText, err := w.Queries.GetToken(ctx, int64(sessionID))
 	if err != nil {
@@ -150,8 +165,13 @@ func (w WebUI) Root(c echo.Context) error {
 			return err
 		}
 
-		if userState.Userinfo != nil {
-			tmplData.WelcomeName = userState.Userinfo.Email
+		name, err := w.getUserName(ctx, sessionID)
+		if err != nil {
+			return err
+		}
+
+		if name.Valid {
+			tmplData.WelcomeName = name.String
 		}
 	}
 

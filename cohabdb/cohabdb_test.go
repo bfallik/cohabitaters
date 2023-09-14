@@ -27,7 +27,7 @@ func Test_CreateOrSelectUser(t *testing.T) {
 
 	cup0 := CreateUserParams{
 		Sub: "foo",
-		FullName: sql.NullString{
+		Name: sql.NullString{
 			String: "bar",
 			Valid:  true,
 		},
@@ -41,11 +41,11 @@ func Test_CreateOrSelectUser(t *testing.T) {
 		t.Errorf("sub got = %v, want = %v", user.Sub, cup0.Sub)
 	}
 
-	if !cmp.Equal(user.FullName, cup0.FullName) {
-		t.Errorf("full name got = %v, want = %v", user.FullName, cup0.FullName)
+	if !cmp.Equal(user.Name, cup0.Name) {
+		t.Errorf("full name got = %v, want = %v", user.Name, cup0.Name)
 	}
 
-	cup0.FullName = sql.NullString{
+	cup0.Name = sql.NullString{
 		String: "baz",
 		Valid:  true,
 	}
@@ -59,8 +59,8 @@ func Test_CreateOrSelectUser(t *testing.T) {
 		t.Errorf("sub got = %v, want = %v", user.Sub, cup0.Sub)
 	}
 
-	if !cmp.Equal(user.FullName, cup0.FullName) {
-		t.Errorf("full name got = %v, want = %v", user.FullName, cup0.FullName)
+	if !cmp.Equal(user.Name, cup0.Name) {
+		t.Errorf("full name got = %v, want = %v", user.Name, cup0.Name)
 	}
 
 }
@@ -79,7 +79,7 @@ func TestQueries(t *testing.T) {
 	}
 	queries := New(db)
 
-	user, err := queries.CreateUser(ctx, CreateUserParams{FullName: sql.NullString{String: "Test User", Valid: true}, Sub: "Test Sub"})
+	user, err := queries.CreateUser(ctx, CreateUserParams{Name: sql.NullString{String: "Test User", Valid: true}, Sub: "Test Sub"})
 	if err != nil {
 		t.Errorf("%v", err)
 	}

@@ -51,6 +51,9 @@ func (ms mockSessioner) GetSession(ctx context.Context, sessionID int64) (cohabd
 func (ms mockSessioner) GetToken(ctx context.Context, userID int64) (sql.NullString, error) {
 	return sql.NullString{}, nil
 }
+func (ms mockSessioner) GetUserBySession(ctx context.Context, sessionID int64) (cohabdb.User, error) {
+	return cohabdb.User{}, nil
+}
 
 func TestRoot(t *testing.T) {
 	e := echo.New()

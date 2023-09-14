@@ -36,16 +36,22 @@ WHERE id = ?;
 SELECT * FROM users
 WHERE id = ? LIMIT 1;
 
+-- name: GetUserBySession :one
+SELECT u.* FROM users u
+INNER JOIN sessions s
+WHERE u.id = s.user_id
+AND s.id = ? LIMIT 1;
+
 -- name: GetUserBySub :one
 SELECT * FROM users
 WHERE sub = ? LIMIT 1;
 
-
 -- name: CreateUser :one
 INSERT OR REPLACE INTO users (
-  full_name,
-  sub
+  sub,
+  name,
+  picture
 ) VALUES (
-  ?, ?
+  ?, ?, ?
 )
 RETURNING *;

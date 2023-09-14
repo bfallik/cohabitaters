@@ -16,8 +16,9 @@ type Session struct {
 }
 
 type User struct {
-	ID       int64
-	Sub      string
-	FullName sql.NullString
-	Token    sql.NullString
+	ID      int64
+	Sub     string
+	Name    sql.NullString
+	Picture sql.NullString
+	Token   sql.NullString
 }

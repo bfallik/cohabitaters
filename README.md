@@ -15,6 +15,7 @@ Cohabitaters uses several platforms and libraries. On the front-end:
 and on the the back-end:
 * [Go](https://go.dev/) and [echo](https://echo.labstack.com/) for the web server
 * [Air](https://github.com/cosmtrek/air) for live reloading
+* [sqlite](https://www.sqlite.org/index.html) and [sqlc](https://sqlc.dev/) for data
 
 Deployment uses a healthy mix of [Google Domains](https://domains.google.com/registrar/), [GCP](https://cloud.google.com/), and [fly.io](https://fly.io/).
 

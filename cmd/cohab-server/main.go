@@ -99,6 +99,7 @@ func main() {
 	e.GET("/partial/tableResults", webUIHandler.PartialTableResults)
 	e.GET("/about", webUIHandler.About)
 	e.GET("/error", webUIHandler.Error)
+	e.GET("/error2", webUIHandler.Error2)
 	e.GET("/logout", webUIHandler.Logout)
 
 	e.GET("/auth/google/callback", oauthHandler.GoogleCallbackAuthz).Name = handlers.RedirectURLAuthz

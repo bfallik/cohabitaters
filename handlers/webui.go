@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -222,6 +223,14 @@ func (w WebUI) About(c echo.Context) error {
 
 func (w WebUI) Error(c echo.Context) error {
 	return c.Render(http.StatusInternalServerError, "error.html", nil)
+}
+
+func (w WebUI) Error2(c echo.Context) error {
+	buf := bytes.Buffer{}
+	if err := html.ErrorPage("error", "foo").Render(&buf); err != nil {
+		return err
+	}
+	return c.HTML(http.StatusInternalServerError, buf.String())
 }
 
 func (w WebUI) Logout(c echo.Context) error {

@@ -49,31 +49,54 @@ type WebUI struct {
 	Queries     queryer
 }
 
-func (w WebUI) newTmplIndexData(ctx context.Context, u cohabitaters.UserState, tok *oauth2.Token) (html.TmplIndexData, error) {
-	result := html.TmplIndexData{
-		ClientID:             clientID,
-		Groups:               u.ContactGroups,
-		SelectedResourceName: u.SelectedResourceName,
+func newTmplIndexData() html.TmplIndexData {
+	return html.TmplIndexData{
+		ClientID: clientID,
+	}
+}
+
+func (w WebUI) fillTmplIndexData(ctx context.Context, sessionID int, selectedResourceName string, out *html.TmplIndexData) error {
+	token, err := w.getGoogleToken(ctx, sessionID)
+	if err != nil {
+		return err
 	}
 
-	if tok.Valid() && len(u.SelectedResourceName) > 0 {
-		idx := contactGroupIndex(u.ContactGroups, u.SelectedResourceName)
-		cg := u.ContactGroups[idx]
+	session, err := w.Queries.GetSession(ctx, int64(sessionID))
+	if err != nil {
+		return err
+	}
 
-		googs := googleSvcs{TokenSource: w.OauthConfig.TokenSource(ctx, tok)}
-		cards, err := googs.getContacts(ctx, u.SelectedResourceName)
+	var groups []*people.ContactGroup
+	if session.ContactGroupsJson.Valid {
+		if err := json.Unmarshal([]byte(session.ContactGroupsJson.String), &groups); err != nil {
+			return err
+		}
+	}
+	out.Groups = groups
+
+	if len(selectedResourceName) == 0 && session.SelectedResourceName.Valid {
+		selectedResourceName = session.SelectedResourceName.String
+	}
+
+	if token.Valid() && len(selectedResourceName) > 0 {
+		idx := contactGroupIndex(groups, selectedResourceName)
+		cg := groups[idx]
+
+		googs := googleSvcs{TokenSource: w.OauthConfig.TokenSource(ctx, token)}
+		cards, err := googs.getContacts(ctx, selectedResourceName)
 		if err != nil {
 			if errors.Is(err, cohabitaters.ErrEmptyGroup) {
-				result.GroupErrorMsg = fmt.Sprintf("No contacts found in group <%s>", cg.Name)
-				return result, nil
+				out.GroupErrorMsg = fmt.Sprintf("No contacts found in group <%s>", cg.Name)
+				return nil
 			}
-			return result, err
+			return err
 		}
-		result.TableResults = cards
-		result.CountContacts = int(cg.MemberCount)
+		out.TableResults = cards
+		out.CountContacts = int(cg.MemberCount)
+		out.SelectedResourceName = selectedResourceName
 	}
 
-	return result, nil
+	return nil
 }
 
 type queryer interface {
@@ -81,6 +104,7 @@ type queryer interface {
 	GetSession(ctx context.Context, sessionID int64) (cohabdb.Session, error)
 	GetToken(ctx context.Context, sessionID int64) (sql.NullString, error)
 	GetUserBySession(ctx context.Context, sessionID int64) (cohabdb.User, error)
+	UpdateSelectedResourceName(ctx context.Context, params cohabdb.UpdateSelectedResourceNameParams) error
 }
 
 func (w WebUI) logUserOut(ctx context.Context, sessionID int) error {
@@ -149,19 +173,14 @@ func (w WebUI) Root(c echo.Context) error {
 		return err
 	}
 
-	var tmplData html.TmplIndexData
+	tmplData := newTmplIndexData()
 	u := new(url.URL)
 	u.Host = c.Request().Host
 	u.Path = c.Echo().Reverse(RedirectURLAuthn)
 	tmplData.LoginURL = u.String()
 
 	if isLoggedIn {
-		userState := w.UserCache.Get(sessionID)
-		token, err := w.getGoogleToken(ctx, sessionID)
-		if err != nil {
-			return err
-		}
-		if tmplData, err = w.newTmplIndexData(c.Request().Context(), userState, token); err != nil {
+		if err = w.fillTmplIndexData(c.Request().Context(), sessionID, "", &tmplData); err != nil {
 			return err
 		}
 
@@ -189,7 +208,6 @@ func (w WebUI) PartialTableResults(c echo.Context) error {
 		c.Logger().Infof("error getting previous session: %w", err)
 	}
 	sessionID := sessionID(s)
-	userState := w.UserCache.Get(sessionID)
 
 	ctx := c.Request().Context()
 	isLoggedIn, err := w.isUserLoggedIn(ctx, sessionID)
@@ -200,16 +218,23 @@ func (w WebUI) PartialTableResults(c echo.Context) error {
 		c.Logger().Infof("request for partial results without login session")
 		return c.Render(http.StatusUnauthorized, "error.html", nil)
 	}
-	userState.SelectedResourceName = c.QueryParam("contact-group")
-	w.UserCache.Set(sessionID, userState)
 
-	token, err := w.getGoogleToken(ctx, sessionID)
-	if err != nil {
+	selectedResourceName, ok := c.QueryParams()["contact-group"]
+	if !ok {
+		c.Logger().Error("missing expected contact-group")
+		return c.NoContent(http.StatusBadRequest)
+	}
+
+	tmplData := newTmplIndexData()
+	if err = w.fillTmplIndexData(c.Request().Context(), sessionID, selectedResourceName[0], &tmplData); err != nil {
 		return err
 	}
 
-	var tmplData html.TmplIndexData
-	if tmplData, err = w.newTmplIndexData(c.Request().Context(), userState, token); err != nil {
+	if err := w.Queries.UpdateSelectedResourceName(
+		ctx,
+		cohabdb.UpdateSelectedResourceNameParams{
+			ID:                   int64(sessionID),
+			SelectedResourceName: sql.NullString{Valid: true, String: selectedResourceName[0]}}); err != nil {
 		return err
 	}
 
@@ -233,7 +258,6 @@ func (w WebUI) Logout(c echo.Context) error {
 	s.Options.MaxAge = -1
 
 	sessionID := sessionID(s)
-	w.UserCache.Delete(sessionID)
 
 	if err := w.logUserOut(c.Request().Context(), sessionID); err != nil {
 		return err

@@ -11,5 +11,8 @@ CREATE TABLE sessions (
   user_id INTEGER,
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
   is_logged_in BOOLEAN NOT NULL DEFAULT (true),
+	google_force_approval BOOLEAN NOT NULL DEFAULT (false),
+	contact_groups_json TEXT,
+	selected_resource_name TEXT,
   FOREIGN KEY(user_id) REFERENCES users(id)
 );

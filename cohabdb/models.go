@@ -9,10 +9,13 @@ import (
 )
 
 type Session struct {
-	ID         int64
-	UserID     sql.NullInt64
-	CreatedAt  int64
-	IsLoggedIn bool
+	ID                   int64
+	UserID               sql.NullInt64
+	CreatedAt            int64
+	IsLoggedIn           bool
+	GoogleForceApproval  bool
+	ContactGroupsJson    sql.NullString
+	SelectedResourceName sql.NullString
 }
 
 type User struct {

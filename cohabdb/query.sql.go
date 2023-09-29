@@ -16,7 +16,7 @@ INSERT INTO sessions (
 ) VALUES (
   ?, ?
 )
-RETURNING id, user_id, created_at, is_logged_in
+RETURNING id, user_id, created_at, is_logged_in, google_force_approval, contact_groups_json, selected_resource_name
 `
 
 type CreateSessionParams struct {
@@ -32,6 +32,9 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 		&i.UserID,
 		&i.CreatedAt,
 		&i.IsLoggedIn,
+		&i.GoogleForceApproval,
+		&i.ContactGroupsJson,
+		&i.SelectedResourceName,
 	)
 	return i, err
 }
@@ -78,7 +81,7 @@ func (q *Queries) ExpireSession(ctx context.Context, id int64) error {
 }
 
 const getSession = `-- name: GetSession :one
-SELECT id, user_id, created_at, is_logged_in FROM sessions
+SELECT id, user_id, created_at, is_logged_in, google_force_approval, contact_groups_json, selected_resource_name FROM sessions
 WHERE ID = ? LIMIT 1
 `
 
@@ -90,6 +93,9 @@ func (q *Queries) GetSession(ctx context.Context, id int64) (Session, error) {
 		&i.UserID,
 		&i.CreatedAt,
 		&i.IsLoggedIn,
+		&i.GoogleForceApproval,
+		&i.ContactGroupsJson,
+		&i.SelectedResourceName,
 	)
 	return i, err
 }
@@ -162,6 +168,54 @@ func (q *Queries) GetUserBySub(ctx context.Context, sub string) (User, error) {
 		&i.Token,
 	)
 	return i, err
+}
+
+const updateContactGroupsJSON = `-- name: UpdateContactGroupsJSON :exec
+UPDATE sessions
+SET contact_groups_json = ?
+WHERE id = ?
+`
+
+type UpdateContactGroupsJSONParams struct {
+	ContactGroupsJson sql.NullString
+	ID                int64
+}
+
+func (q *Queries) UpdateContactGroupsJSON(ctx context.Context, arg UpdateContactGroupsJSONParams) error {
+	_, err := q.db.ExecContext(ctx, updateContactGroupsJSON, arg.ContactGroupsJson, arg.ID)
+	return err
+}
+
+const updateGoogleForceApproval = `-- name: UpdateGoogleForceApproval :exec
+UPDATE sessions
+SET google_force_approval = ?
+WHERE id = ?
+`
+
+type UpdateGoogleForceApprovalParams struct {
+	GoogleForceApproval bool
+	ID                  int64
+}
+
+func (q *Queries) UpdateGoogleForceApproval(ctx context.Context, arg UpdateGoogleForceApprovalParams) error {
+	_, err := q.db.ExecContext(ctx, updateGoogleForceApproval, arg.GoogleForceApproval, arg.ID)
+	return err
+}
+
+const updateSelectedResourceName = `-- name: UpdateSelectedResourceName :exec
+UPDATE sessions
+SET selected_resource_name = ?
+WHERE id = ?
+`
+
+type UpdateSelectedResourceNameParams struct {
+	SelectedResourceName sql.NullString
+	ID                   int64
+}
+
+func (q *Queries) UpdateSelectedResourceName(ctx context.Context, arg UpdateSelectedResourceNameParams) error {
+	_, err := q.db.ExecContext(ctx, updateSelectedResourceName, arg.SelectedResourceName, arg.ID)
+	return err
 }
 
 const updateTokenBySession = `-- name: UpdateTokenBySession :exec

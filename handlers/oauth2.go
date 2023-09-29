@@ -109,15 +109,19 @@ func (o *Oauth2) GoogleLoginAuthz(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("error getting session: %w", err)
 	}
+
 	sessionID := sessionID(s)
-	userState := o.UserCache.Get(sessionID)
+	session, err := o.Queries.GetSession(c.Request().Context(), int64(sessionID))
+	if err != nil {
+		return fmt.Errorf("error getting session: %w", err)
+	}
 
 	/*
 		AuthCodeURL receive state that is a token to protect the user from CSRF attacks. You must always provide a non-empty string and
 		validate that it matches the the state query parameter on your redirect callback.
 	*/
 	opts := []oauth2.AuthCodeOption{oauth2.AccessTypeOnline}
-	if userState.GoogleForceApproval {
+	if session.GoogleForceApproval {
 		opts = append(opts, oauth2.ApprovalForce)
 	}
 	u := o.OauthConfig.AuthCodeURL(oauthState.Value, opts...)
@@ -130,12 +134,19 @@ func (o *Oauth2) GoogleForceApproval(c echo.Context) error {
 		return fmt.Errorf("error getting session: %w", err)
 	}
 	sessionID := sessionID(s)
-	userState := o.UserCache.Get(sessionID)
+	session, err := o.Queries.GetSession(c.Request().Context(), int64(sessionID))
+	if err != nil {
+		return fmt.Errorf("error getting session: %w", err)
+	}
 
-	userState.GoogleForceApproval = !userState.GoogleForceApproval
-	o.UserCache.Set(sessionID, userState)
+	if err := o.Queries.UpdateGoogleForceApproval(c.Request().Context(), cohabdb.UpdateGoogleForceApprovalParams{
+		ID:                  session.ID,
+		GoogleForceApproval: !session.GoogleForceApproval,
+	}); err != nil {
+		return fmt.Errorf("error setting GoogleForceApproval: %w", err)
+	}
 
-	return c.JSON(http.StatusOK, struct{ ForceApproval bool }{userState.GoogleForceApproval})
+	return c.JSON(http.StatusOK, struct{ ForceApproval bool }{!session.GoogleForceApproval})
 }
 
 func (o *Oauth2) setGoogleToken(ctx context.Context, sessionID int, tok *oauth2.Token) error {
@@ -200,10 +211,18 @@ func (o *Oauth2) GoogleCallbackAuthz(c echo.Context) error {
 		return fmt.Errorf("error getting session: %w", err)
 	}
 	sessionID := sessionID(s)
-	userState := o.UserCache.Get(sessionID)
 
-	userState.ContactGroups = userGroups
-	o.UserCache.Set(sessionID, userState)
+	bs, err := json.Marshal(userGroups)
+	if err != nil {
+		return fmt.Errorf("error marshaling userGroups: %w", err)
+	}
+
+	if err := o.Queries.UpdateContactGroupsJSON(ctx, cohabdb.UpdateContactGroupsJSONParams{
+		ID:                int64(sessionID),
+		ContactGroupsJson: sql.NullString{Valid: true, String: string(bs)},
+	}); err != nil {
+		return fmt.Errorf("error getting session: %w", err)
+	}
 
 	if err := o.setGoogleToken(ctx, sessionID, token); err != nil {
 		return fmt.Errorf("error saving token: %w", err)

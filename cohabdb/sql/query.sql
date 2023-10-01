@@ -57,10 +57,6 @@ INNER JOIN sessions s
 WHERE u.id = s.user_id
 AND s.id = ? LIMIT 1;
 
--- name: GetUserBySub :one
-SELECT * FROM users
-WHERE sub = ? LIMIT 1;
-
 -- name: CreateUser :one
 INSERT OR REPLACE INTO users (
   sub,

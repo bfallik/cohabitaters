@@ -13,60 +13,6 @@ import (
 
 func OpenInMemory() (*sql.DB, error) { return Open(":memory:") }
 
-func Test_CreateOrSelectUser(t *testing.T) {
-	ctx := context.Background()
-
-	db, err := OpenInMemory()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	defer db.Close()
-
-	if err := CreateTables(ctx, db); err != nil {
-		t.Fatalf("%v", err)
-	}
-	queries := New(db)
-
-	cup0 := CreateUserParams{
-		Sub: "foo",
-		Name: sql.NullString{
-			String: "bar",
-			Valid:  true,
-		},
-	}
-	user, err := CreateOrSelectUser(ctx, queries, cup0)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	if user.Sub != cup0.Sub {
-		t.Errorf("sub got = %v, want = %v", user.Sub, cup0.Sub)
-	}
-
-	if !cmp.Equal(user.Name, cup0.Name) {
-		t.Errorf("full name got = %v, want = %v", user.Name, cup0.Name)
-	}
-
-	cup0.Name = sql.NullString{
-		String: "baz",
-		Valid:  true,
-	}
-
-	user, err = CreateOrSelectUser(ctx, queries, cup0)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	if user.Sub != cup0.Sub {
-		t.Errorf("sub got = %v, want = %v", user.Sub, cup0.Sub)
-	}
-
-	if !cmp.Equal(user.Name, cup0.Name) {
-		t.Errorf("full name got = %v, want = %v", user.Name, cup0.Name)
-	}
-
-}
-
 func TestQueries(t *testing.T) {
 	ctx := context.Background()
 

@@ -152,24 +152,6 @@ func (q *Queries) GetUserBySession(ctx context.Context, id int64) (User, error) 
 	return i, err
 }
 
-const getUserBySub = `-- name: GetUserBySub :one
-SELECT id, sub, name, picture, token FROM users
-WHERE sub = ? LIMIT 1
-`
-
-func (q *Queries) GetUserBySub(ctx context.Context, sub string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserBySub, sub)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Sub,
-		&i.Name,
-		&i.Picture,
-		&i.Token,
-	)
-	return i, err
-}
-
 const updateContactGroupsJSON = `-- name: UpdateContactGroupsJSON :exec
 UPDATE sessions
 SET contact_groups_json = ?

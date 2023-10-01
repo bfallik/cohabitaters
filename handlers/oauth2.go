@@ -264,7 +264,7 @@ func unmarshalClaims(m map[string]interface{}, cup *cohabdb.CreateUserParams) er
 }
 
 func (o *Oauth2) LogUserIn(ctx context.Context, cup cohabdb.CreateUserParams, sessionID int) (cohabdb.Session, error) {
-	user, err := cohabdb.CreateOrSelectUser(ctx, o.Queries, cup)
+	user, err := o.Queries.CreateUser(ctx, cup)
 	if err != nil {
 		return cohabdb.Session{}, fmt.Errorf("error upserting user: %v", err)
 	}

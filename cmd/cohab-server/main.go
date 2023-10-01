@@ -11,7 +11,6 @@ import (
 	"github.com/bfallik/cohabitaters/cohabdb"
 	"github.com/bfallik/cohabitaters/handlers"
 	"github.com/bfallik/cohabitaters/html"
-	"github.com/bfallik/cohabitaters/mapcache"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -56,8 +55,6 @@ func main() {
 	}
 	store := sessions.NewCookieStore(keys[0:64], keys[64:96])
 
-	userCache := mapcache.Map[cohabitaters.UserState]{}
-
 	db, err := cohabdb.Open()
 	if err != nil {
 		log.Fatalf("database open: %v", err)
@@ -76,19 +73,15 @@ func main() {
 		return html.NewTemplater(html.Templates...).Render(w, name, data)
 	})
 
-	dbgHandler := handlers.Debug{
-		UserCache: &userCache,
-	}
+	dbgHandler := handlers.Debug{}
 
 	oauthHandler := handlers.Oauth2{
 		OauthConfig: oauthConfig,
-		UserCache:   &userCache,
 		Queries:     queries,
 	}
 
 	webUIHandler := handlers.WebUI{
 		OauthConfig: oauthConfig,
-		UserCache:   &userCache,
 		Queries:     queries,
 	}
 
@@ -108,7 +101,6 @@ func main() {
 	e.POST("/authn/google/callback", oauthHandler.GoogleCallbackAuthn).Name = handlers.RedirectURLAuthn
 
 	e.GET("/debug/buildinfo", dbgHandler.BuildInfo)
-	e.GET("/debug/sessions", dbgHandler.Sessions)
 
 	e.Logger.Fatal(e.Start(listenAddress))
 }

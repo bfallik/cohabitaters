@@ -14,9 +14,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bfallik/cohabitaters"
 	"github.com/bfallik/cohabitaters/cohabdb"
-	"github.com/bfallik/cohabitaters/mapcache"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
@@ -85,7 +83,6 @@ func sessionID(s *sessions.Session) int {
 
 type Oauth2 struct {
 	OauthConfig *oauth2.Config
-	UserCache   *mapcache.Map[cohabitaters.UserState]
 	Queries     *cohabdb.Queries
 }
 

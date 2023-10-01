@@ -14,7 +14,6 @@ import (
 	"github.com/bfallik/cohabitaters"
 	"github.com/bfallik/cohabitaters/cohabdb"
 	"github.com/bfallik/cohabitaters/html"
-	"github.com/bfallik/cohabitaters/mapcache"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
@@ -45,7 +44,6 @@ func contactGroupIndex(cgs []*people.ContactGroup, target string) int {
 
 type WebUI struct {
 	OauthConfig *oauth2.Config
-	UserCache   *mapcache.Map[cohabitaters.UserState]
 	Queries     queryer
 }
 

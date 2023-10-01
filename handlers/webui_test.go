@@ -11,10 +11,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/bfallik/cohabitaters"
 	"github.com/bfallik/cohabitaters/cohabdb"
 	"github.com/bfallik/cohabitaters/html"
-	"github.com/bfallik/cohabitaters/mapcache"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
 )
@@ -79,10 +77,8 @@ func TestRoot(t *testing.T) {
 			store := sessions.NewCookieStore([]byte{})
 			c.Set("_session_store", store)
 
-			userCache := mapcache.Map[cohabitaters.UserState]{}
 			h := &WebUI{
-				UserCache: &userCache,
-				Queries:   sess,
+				Queries: sess,
 			}
 
 			if err := h.Root(c); err != nil {

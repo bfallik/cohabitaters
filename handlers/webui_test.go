@@ -40,19 +40,49 @@ func isValidHTML(r io.Reader) error {
 	}
 }
 
-type mockSessioner struct{}
+type mockQuerier struct{}
 
-func (ms mockSessioner) ExpireSession(ctx context.Context, sessionID int64) error { return nil }
-func (ms mockSessioner) GetSession(ctx context.Context, sessionID int64) (cohabdb.Session, error) {
+func (ms mockQuerier) CreateSession(ctx context.Context, arg cohabdb.CreateSessionParams) (cohabdb.Session, error) {
 	return cohabdb.Session{}, nil
 }
-func (ms mockSessioner) GetToken(ctx context.Context, userID int64) (sql.NullString, error) {
-	return sql.NullString{}, nil
-}
-func (ms mockSessioner) GetUserBySession(ctx context.Context, sessionID int64) (cohabdb.User, error) {
+
+func (ms mockQuerier) CreateUser(ctx context.Context, arg cohabdb.CreateUserParams) (cohabdb.User, error) {
 	return cohabdb.User{}, nil
 }
-func (ms mockSessioner) UpdateSelectedResourceName(ctx context.Context, params cohabdb.UpdateSelectedResourceNameParams) error {
+
+func (ms mockQuerier) ExpireSession(ctx context.Context, id int64) error {
+	return nil
+}
+
+func (ms mockQuerier) GetSession(ctx context.Context, id int64) (cohabdb.Session, error) {
+	return cohabdb.Session{}, nil
+}
+
+func (ms mockQuerier) GetToken(ctx context.Context, id int64) (sql.NullString, error) {
+	return sql.NullString{}, nil
+}
+
+func (ms mockQuerier) GetUser(ctx context.Context, id int64) (cohabdb.User, error) {
+	return cohabdb.User{}, nil
+}
+
+func (ms mockQuerier) GetUserBySession(ctx context.Context, id int64) (cohabdb.User, error) {
+	return cohabdb.User{}, nil
+}
+
+func (ms mockQuerier) UpdateContactGroupsJSON(ctx context.Context, arg cohabdb.UpdateContactGroupsJSONParams) error {
+	return nil
+}
+
+func (ms mockQuerier) UpdateGoogleForceApproval(ctx context.Context, arg cohabdb.UpdateGoogleForceApprovalParams) error {
+	return nil
+}
+
+func (ms mockQuerier) UpdateSelectedResourceName(ctx context.Context, arg cohabdb.UpdateSelectedResourceNameParams) error {
+	return nil
+}
+
+func (ms mockQuerier) UpdateTokenBySession(ctx context.Context, arg cohabdb.UpdateTokenBySessionParams) error {
 	return nil
 }
 
@@ -61,7 +91,7 @@ func TestRoot(t *testing.T) {
 	e.Renderer = renderFunc(func(w io.Writer, name string, data interface{}, c echo.Context) error {
 		return html.NewTemplater(html.Templates...).Render(w, name, data)
 	})
-	sess := mockSessioner{}
+	sess := mockQuerier{}
 
 	subtester := func(cookie *http.Cookie) func(t *testing.T) {
 		return func(t *testing.T) {

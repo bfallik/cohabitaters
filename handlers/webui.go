@@ -44,7 +44,7 @@ func contactGroupIndex(cgs []*people.ContactGroup, target string) int {
 
 type WebUI struct {
 	OauthConfig *oauth2.Config
-	Queries     queryer
+	Queries     cohabdb.Querier
 }
 
 func newTmplIndexData() html.TmplIndexData {
@@ -95,14 +95,6 @@ func (w WebUI) fillTmplIndexData(ctx context.Context, sessionID int, selectedRes
 	}
 
 	return nil
-}
-
-type queryer interface {
-	ExpireSession(ctx context.Context, sessionID int64) error
-	GetSession(ctx context.Context, sessionID int64) (cohabdb.Session, error)
-	GetToken(ctx context.Context, sessionID int64) (sql.NullString, error)
-	GetUserBySession(ctx context.Context, sessionID int64) (cohabdb.User, error)
-	UpdateSelectedResourceName(ctx context.Context, params cohabdb.UpdateSelectedResourceNameParams) error
 }
 
 func (w WebUI) logUserOut(ctx context.Context, sessionID int) error {

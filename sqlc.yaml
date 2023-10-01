@@ -7,3 +7,4 @@ sql:
       go:
         package: "cohabdb"
         out: "cohabdb"
+        emit_interface: true

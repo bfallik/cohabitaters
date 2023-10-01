@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	_ "embed"
 	"errors"
+	"net/url"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -12,8 +13,13 @@ import (
 //go:embed sql/schema.sql
 var ddl string
 
-func Open() (*sql.DB, error) {
-	return sql.Open("sqlite3", ":memory:?_foreign_keys=on")
+func Open(filename string) (*sql.DB, error) {
+	u := url.URL{}
+	u.Path = filename
+	q := u.Query()
+	q.Set("_foreign_keys", "on")
+	u.RawQuery = q.Encode()
+	return sql.Open("sqlite3", u.RequestURI())
 }
 
 func CreateTables(ctx context.Context, db *sql.DB) error {

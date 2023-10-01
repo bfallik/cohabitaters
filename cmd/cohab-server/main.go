@@ -20,6 +20,7 @@ import (
 )
 
 const defaultListenAddress = "localhost:8080"
+const defaultDBFile = "file:cohab.db"
 
 type renderFunc func(w io.Writer, name string, data interface{}, c echo.Context) error
 
@@ -55,7 +56,7 @@ func main() {
 	}
 	store := sessions.NewCookieStore(keys[0:64], keys[64:96])
 
-	db, err := cohabdb.Open()
+	db, err := cohabdb.Open(defaultDBFile)
 	if err != nil {
 		log.Fatalf("database open: %v", err)
 	}

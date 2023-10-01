@@ -11,10 +11,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
+func OpenInMemory() (*sql.DB, error) { return Open(":memory:") }
+
 func Test_CreateOrSelectUser(t *testing.T) {
 	ctx := context.Background()
 
-	db, err := Open()
+	db, err := OpenInMemory()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -68,7 +70,7 @@ func Test_CreateOrSelectUser(t *testing.T) {
 func TestQueries(t *testing.T) {
 	ctx := context.Background()
 
-	db, err := Open()
+	db, err := OpenInMemory()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

@@ -1,4 +1,4 @@
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY,
   sub TEXT UNIQUE NOT NULL,
   name TEXT,
@@ -6,7 +6,7 @@ CREATE TABLE users (
   token TEXT
 );
 
-CREATE TABLE sessions (
+CREATE TABLE IF NOT EXISTS sessions (
   id INTEGER PRIMARY KEY,
   user_id INTEGER,
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),

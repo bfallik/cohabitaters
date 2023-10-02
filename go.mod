@@ -3,6 +3,7 @@ module github.com/bfallik/cohabitaters
 go 1.21
 
 require (
+	github.com/a-h/templ v0.2.364
 	github.com/google/go-cmp v0.5.9
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.1

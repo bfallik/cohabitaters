@@ -1,0 +1,86 @@
+package templs
+
+import (
+	"github.com/bfallik/cohabitaters"
+	"google.golang.org/api/people/v1"
+)
+
+type PageIndexInput struct {
+    ClientID string
+    LoginURL string
+    WelcomeName string
+	Groups []*people.ContactGroup
+	TableResults         []cohabitaters.XmasCard
+	SelectedResourceName string
+	GroupErrorMsg        string
+	CountContacts        int
+}
+
+templ welcomeMessage(name string) {
+	if len(name) > 0 {
+		Welcome&nbsp;name
+	} else {
+		Welcome
+	}
+}
+
+templ groupResults(input PageIndexInput) {
+	if len(input.Groups) > 0 {
+		<label for="contact-groups" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+			Select an option
+		</label>
+		<select id="contact-groups" name="contact-group" hx-get="/partial/tableResults" hx-target="#tbl-results" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5 pr-8 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+			<option selected?={ len(input.SelectedResourceName) == 0 }>Choose a contact group</option>
+			for _, group := range input.Groups {
+				<option value={ group.ResourceName } selected?={ group.ResourceName == input.SelectedResourceName }>{ group.FormattedName }</option>
+			}
+		</select>
+	}
+}
+
+templ tableResults(input PageIndexInput) {
+	<div id="tbl-results">
+		if len(input.TableResults) > 0 {
+			@Results(input)
+		}
+	</div>
+}
+
+templ PageIndex(inp PageIndexInput) {
+	<!DOCTYPE html>
+	<html>
+		@PartialHead()
+		<body>
+			<script src="https://accounts.google.com/gsi/client" async defer></script>
+			<div class="flex min-h-screen w-full flex-col grow word-break">
+				@PartialNavbar()
+				<div
+ 					id="g_id_onload"
+ 					data-client_id={ inp.ClientID }
+ 					data-login_uri={ inp.LoginURL }
+ 					data-auto_prompt="false"
+				></div>
+				<div
+ 					class="g_id_signin"
+ 					data-type="standard"
+ 					data-size="large"
+ 					data-theme="outline"
+ 					data-text="sign_in_with"
+ 					data-shape="rectangular"
+ 					data-logo_alignment="left"
+				></div>
+				<div class="flex flex-auto">
+					@PartialSidebar()
+					<div class="w-full p-2 bg-white">
+						<p class="text-xl py-4">@welcomeMessage(inp.WelcomeName)</p>
+						@groupResults(inp)
+						@tableResults(inp)
+					</div>
+				</div>
+				@PartialFooter()
+			</div>
+			<script src="https://unpkg.com/flowbite@1.5.4/dist/flowbite.js"></script>
+		</body>
+	</html>
+}
+

@@ -1,0 +1,44 @@
+package templs
+
+templ PageAbout() {
+	<!DOCTYPE html>
+	<html>
+		@PartialHead()
+		<body>
+			<div class="flex min-h-screen w-full flex-col grow word-break">
+				@PartialNavbar()
+				<div class="flex flex-auto">
+					@PartialSidebar()
+					<div class="p-4 bg-white w-3/4 text-xl">
+						<i class="text-8xl fa-solid fa-gifts float-left pr-4"></i>
+						<p class="py-4">
+							Cohabitaters lets you aggregate your Google Contacts by their mailing
+							address, created ahead of the holiday season to help simplify our holiday cards. Instead of keeping
+							a separate list or spreadsheet just for address, you can generate the names and addresses
+							directly from your contacts.
+						</p>
+						<p class="pt-2">Basic workflow</p>
+						<ol class="list-decimal list-inside py-2">
+							<li>
+								make sure addresses are up-to-date in 
+								<a
+ 									href="https://contacts.google.com"
+ 									target="_blank"
+ 									rel="noopener noreferrer"
+ 									class="font-medium
+                            text-blue-600 underline dark:text-blue-500 hover:no-underline"
+								>Google Contacts</a>
+							</li>
+							<li>(optional) apply a label to the contacts you want included</li>
+							<li>select your new label or an existing one (e.g. "Starred") from the drop-down</li>
+						</ol>
+						<p>You'll see a table of your contacts grouped by their address. It's a Christmas miracle.</p>
+					</div>
+				</div>
+				@PartialFooter()
+			</div>
+			<script src="https://unpkg.com/flowbite@1.5.4/dist/flowbite.js"></script>
+		</body>
+	</html>
+}
+

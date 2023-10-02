@@ -12,16 +12,9 @@ import (
 	"testing"
 
 	"github.com/bfallik/cohabitaters/cohabdb"
-	"github.com/bfallik/cohabitaters/html"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
 )
-
-type renderFunc func(w io.Writer, name string, data interface{}, c echo.Context) error
-
-func (f renderFunc) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return f(w, name, data, c)
-}
 
 func isValidHTML(r io.Reader) error {
 	d := xml.NewDecoder(r)
@@ -96,9 +89,6 @@ func (ms mockQuerier) UpdateTokenBySession(ctx context.Context, arg cohabdb.Upda
 
 func TestRoot(t *testing.T) {
 	e := echo.New()
-	e.Renderer = renderFunc(func(w io.Writer, name string, data interface{}, c echo.Context) error {
-		return html.NewTemplater(html.Templates...).Render(w, name, data)
-	})
 	sess := mockQuerier{}
 
 	subtester := func(cookie *http.Cookie) func(t *testing.T) {

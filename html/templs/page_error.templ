@@ -1,0 +1,22 @@
+package templs
+
+templ PageError() {
+	<!DOCTYPE html>
+	<html>
+		@PartialHead()
+		<body>
+			<div class="flex min-h-screen w-full flex-col grow word-break">
+				@PartialNavbar()
+				<div class="flex flex-auto">
+					<div class="w-full p-2 bg-white">
+						<p>Oops.</p>
+						Something went wrong
+					</div>
+				</div>
+				@PartialFooter()
+			</div>
+			<script src="https://unpkg.com/flowbite@1.5.4/dist/flowbite.js"></script>
+		</body>
+	</html>
+}
+

@@ -36,6 +36,10 @@ check:
 generate-sqlc:
 	sqlc vet && sqlc generate
 
+.PHONY: generate-templ
+generate-templ:
+	templ generate && templ fmt html/templs
+
 .PHONY: clean
 clean:
 	rm -f $(TARGETS)

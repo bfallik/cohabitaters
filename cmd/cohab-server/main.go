@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"encoding/base64"
-	"io"
 	"log"
 	"os"
 
 	"github.com/bfallik/cohabitaters"
 	"github.com/bfallik/cohabitaters/cohabdb"
 	"github.com/bfallik/cohabitaters/handlers"
-	"github.com/bfallik/cohabitaters/html"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -21,12 +19,6 @@ import (
 
 const defaultListenAddress = "localhost:8080"
 const defaultDBFile = "file:cohab.db"
-
-type renderFunc func(w io.Writer, name string, data interface{}, c echo.Context) error
-
-func (f renderFunc) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return f(w, name, data, c)
-}
 
 func main() {
 	log.Printf("%s", cohabitaters.BuildInfo())
@@ -70,9 +62,6 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(session.Middleware(store))
 	e.Use(middleware.Secure())
-	e.Renderer = renderFunc(func(w io.Writer, name string, data interface{}, c echo.Context) error {
-		return html.NewTemplater(html.Templates...).Render(w, name, data)
-	})
 
 	dbgHandler := handlers.Debug{}
 
@@ -91,8 +80,8 @@ func main() {
 
 	e.GET("/", webUIHandler.Root)
 	e.GET("/partial/tableResults", webUIHandler.PartialTableResults)
-	e.GET("/about", webUIHandler.About)
-	e.GET("/error", webUIHandler.Error)
+	e.GET("/about", handlers.About)
+	e.GET("/error", handlers.Error)
 	e.GET("/logout", webUIHandler.Logout)
 
 	e.GET("/auth/google/callback", oauthHandler.GoogleCallbackAuthz).Name = handlers.RedirectURLAuthz

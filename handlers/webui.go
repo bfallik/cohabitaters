@@ -11,6 +11,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/bfallik/cohabitaters"
 	"github.com/bfallik/cohabitaters/cohabdb"
 	"github.com/bfallik/cohabitaters/html"
@@ -147,6 +148,11 @@ func (w WebUI) getGoogleToken(ctx context.Context, sessionID int) (*oauth2.Token
 	return &tok, err
 }
 
+func renderComponentHTML(c echo.Context, cmp templ.Component) error {
+	c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTML)
+	return cmp.Render(c.Request().Context(), c.Response().Writer)
+}
+
 func (w WebUI) Root(c echo.Context) error {
 	s, err := session.Get(sessionName, c)
 	if err != nil {
@@ -188,7 +194,8 @@ func (w WebUI) Root(c echo.Context) error {
 	if err := s.Save(c.Request(), c.Response()); err != nil {
 		return err
 	}
-	return c.Render(http.StatusOK, "index.html", tmplData)
+
+	return renderComponentHTML(c, html.ComponentPageIndex(tmplData))
 }
 
 func (w WebUI) PartialTableResults(c echo.Context) error {
@@ -228,15 +235,7 @@ func (w WebUI) PartialTableResults(c echo.Context) error {
 		return err
 	}
 
-	return c.Render(http.StatusOK, "partials/results.html", tmplData)
-}
-
-func (w WebUI) About(c echo.Context) error {
-	return c.Render(http.StatusOK, "about.html", nil)
-}
-
-func (w WebUI) Error(c echo.Context) error {
-	return c.Render(http.StatusInternalServerError, "error.html", nil)
+	return renderComponentHTML(c, html.ComponentTableResults(tmplData))
 }
 
 func (w WebUI) Logout(c echo.Context) error {

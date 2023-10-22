@@ -10,65 +10,6 @@ import (
 	"database/sql"
 )
 
-const createSession = `-- name: CreateSession :one
-INSERT INTO sessions (
-  id, user_id
-) VALUES (
-  ?, ?
-)
-RETURNING id, user_id, created_at, is_logged_in, google_force_approval, contact_groups_json, selected_resource_name
-`
-
-type CreateSessionParams struct {
-	ID     int64
-	UserID sql.NullInt64
-}
-
-func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error) {
-	row := q.db.QueryRowContext(ctx, createSession, arg.ID, arg.UserID)
-	var i Session
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.CreatedAt,
-		&i.IsLoggedIn,
-		&i.GoogleForceApproval,
-		&i.ContactGroupsJson,
-		&i.SelectedResourceName,
-	)
-	return i, err
-}
-
-const createUser = `-- name: CreateUser :one
-INSERT OR REPLACE INTO users (
-  sub,
-  name,
-  picture
-) VALUES (
-  ?, ?, ?
-)
-RETURNING id, sub, name, picture, token
-`
-
-type CreateUserParams struct {
-	Sub     string
-	Name    sql.NullString
-	Picture sql.NullString
-}
-
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Sub, arg.Name, arg.Picture)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Sub,
-		&i.Name,
-		&i.Picture,
-		&i.Token,
-	)
-	return i, err
-}
-
 const expireSession = `-- name: ExpireSession :exec
 UPDATE sessions
 SET is_logged_in = false
@@ -152,6 +93,66 @@ func (q *Queries) GetUserBySession(ctx context.Context, id int64) (User, error) 
 	return i, err
 }
 
+const insertSession = `-- name: InsertSession :one
+INSERT INTO sessions (
+  id, user_id
+) VALUES (
+  ?, ?
+)
+RETURNING id, user_id, created_at, is_logged_in, google_force_approval, contact_groups_json, selected_resource_name
+`
+
+type InsertSessionParams struct {
+	ID     int64
+	UserID int64
+}
+
+func (q *Queries) InsertSession(ctx context.Context, arg InsertSessionParams) (Session, error) {
+	row := q.db.QueryRowContext(ctx, insertSession, arg.ID, arg.UserID)
+	var i Session
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.IsLoggedIn,
+		&i.GoogleForceApproval,
+		&i.ContactGroupsJson,
+		&i.SelectedResourceName,
+	)
+	return i, err
+}
+
+const insertUser = `-- name: InsertUser :one
+INSERT INTO users
+(
+  sub,
+  name,
+  picture
+) VALUES (
+  ?, ?, ?
+)
+RETURNING id, sub, name, picture, token
+`
+
+type InsertUserParams struct {
+	Sub     string
+	Name    sql.NullString
+	Picture sql.NullString
+}
+
+func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, insertUser, arg.Sub, arg.Name, arg.Picture)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Sub,
+		&i.Name,
+		&i.Picture,
+		&i.Token,
+	)
+	return i, err
+}
+
 const updateContactGroupsJSON = `-- name: UpdateContactGroupsJSON :exec
 UPDATE sessions
 SET contact_groups_json = ?
@@ -219,4 +220,69 @@ type UpdateTokenBySessionParams struct {
 func (q *Queries) UpdateTokenBySession(ctx context.Context, arg UpdateTokenBySessionParams) error {
 	_, err := q.db.ExecContext(ctx, updateTokenBySession, arg.Token, arg.ID)
 	return err
+}
+
+const upsertSession = `-- name: UpsertSession :one
+INSERT INTO sessions (
+  id, user_id
+) VALUES (
+  ?, ?
+)
+ON CONFLICT(id, user_id) DO UPDATE SET
+  id=excluded.id
+RETURNING id, user_id, created_at, is_logged_in, google_force_approval, contact_groups_json, selected_resource_name
+`
+
+type UpsertSessionParams struct {
+	ID     int64
+	UserID int64
+}
+
+func (q *Queries) UpsertSession(ctx context.Context, arg UpsertSessionParams) (Session, error) {
+	row := q.db.QueryRowContext(ctx, upsertSession, arg.ID, arg.UserID)
+	var i Session
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.IsLoggedIn,
+		&i.GoogleForceApproval,
+		&i.ContactGroupsJson,
+		&i.SelectedResourceName,
+	)
+	return i, err
+}
+
+const upsertUser = `-- name: UpsertUser :one
+INSERT INTO users
+(
+  sub,
+  name,
+  picture
+) VALUES (
+  ?, ?, ?
+)
+ON CONFLICT(sub) DO UPDATE SET
+  name=excluded.name,
+  picture=excluded.picture
+RETURNING id, sub, name, picture, token
+`
+
+type UpsertUserParams struct {
+	Sub     string
+	Name    sql.NullString
+	Picture sql.NullString
+}
+
+func (q *Queries) UpsertUser(ctx context.Context, arg UpsertUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, upsertUser, arg.Sub, arg.Name, arg.Picture)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Sub,
+		&i.Name,
+		&i.Picture,
+		&i.Token,
+	)
+	return i, err
 }

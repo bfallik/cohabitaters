@@ -19,12 +19,22 @@ WHERE (
 SELECT * FROM sessions
 WHERE ID = ? LIMIT 1;
 
--- name: CreateSession :one
+-- name: InsertSession :one
 INSERT INTO sessions (
   id, user_id
 ) VALUES (
   ?, ?
 )
+RETURNING *;
+
+-- name: UpsertSession :one
+INSERT INTO sessions (
+  id, user_id
+) VALUES (
+  ?, ?
+)
+ON CONFLICT(id, user_id) DO UPDATE SET
+  id=excluded.id
 RETURNING *;
 
 -- name: ExpireSession :exec
@@ -57,12 +67,27 @@ INNER JOIN sessions s
 WHERE u.id = s.user_id
 AND s.id = ? LIMIT 1;
 
--- name: CreateUser :one
-INSERT OR REPLACE INTO users (
+-- name: InsertUser :one
+INSERT INTO users
+(
   sub,
   name,
   picture
 ) VALUES (
   ?, ?, ?
 )
+RETURNING *;
+
+-- name: UpsertUser :one
+INSERT INTO users
+(
+  sub,
+  name,
+  picture
+) VALUES (
+  ?, ?, ?
+)
+ON CONFLICT(sub) DO UPDATE SET
+  name=excluded.name,
+  picture=excluded.picture
 RETURNING *;

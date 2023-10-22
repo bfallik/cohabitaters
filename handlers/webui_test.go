@@ -42,11 +42,19 @@ func isValidHTML(r io.Reader) error {
 
 type mockQuerier struct{}
 
-func (ms mockQuerier) CreateSession(ctx context.Context, arg cohabdb.CreateSessionParams) (cohabdb.Session, error) {
+func (ms mockQuerier) UpsertSession(ctx context.Context, arg cohabdb.UpsertSessionParams) (cohabdb.Session, error) {
 	return cohabdb.Session{}, nil
 }
 
-func (ms mockQuerier) CreateUser(ctx context.Context, arg cohabdb.CreateUserParams) (cohabdb.User, error) {
+func (ms mockQuerier) UpsertUser(ctx context.Context, arg cohabdb.UpsertUserParams) (cohabdb.User, error) {
+	return cohabdb.User{}, nil
+}
+
+func (ms mockQuerier) InsertSession(ctx context.Context, arg cohabdb.InsertSessionParams) (cohabdb.Session, error) {
+	return cohabdb.Session{}, nil
+}
+
+func (ms mockQuerier) InsertUser(ctx context.Context, arg cohabdb.InsertUserParams) (cohabdb.User, error) {
 	return cohabdb.User{}, nil
 }
 

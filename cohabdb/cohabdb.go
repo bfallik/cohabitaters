@@ -21,6 +21,8 @@ func Open(filename string) (*sql.DB, error) {
 	return sql.Open("sqlite3", u.RequestURI())
 }
 
+func OpenInMemory() (*sql.DB, error) { return Open(":memory:") }
+
 func CreateTables(ctx context.Context, db *sql.DB) error {
 	_, err := db.ExecContext(ctx, ddl)
 	return err

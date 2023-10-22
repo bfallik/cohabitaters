@@ -10,17 +10,19 @@ import (
 )
 
 type Querier interface {
-	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
-	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	ExpireSession(ctx context.Context, id int64) error
 	GetSession(ctx context.Context, id int64) (Session, error)
 	GetToken(ctx context.Context, id int64) (sql.NullString, error)
 	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserBySession(ctx context.Context, id int64) (User, error)
+	InsertSession(ctx context.Context, arg InsertSessionParams) (Session, error)
+	InsertUser(ctx context.Context, arg InsertUserParams) (User, error)
 	UpdateContactGroupsJSON(ctx context.Context, arg UpdateContactGroupsJSONParams) error
 	UpdateGoogleForceApproval(ctx context.Context, arg UpdateGoogleForceApprovalParams) error
 	UpdateSelectedResourceName(ctx context.Context, arg UpdateSelectedResourceNameParams) error
 	UpdateTokenBySession(ctx context.Context, arg UpdateTokenBySessionParams) error
+	UpsertSession(ctx context.Context, arg UpsertSessionParams) (Session, error)
+	UpsertUser(ctx context.Context, arg UpsertUserParams) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)

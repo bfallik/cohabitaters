@@ -83,7 +83,7 @@ func sessionID(s *sessions.Session) int {
 
 type Oauth2 struct {
 	OauthConfig *oauth2.Config
-	Queries     *cohabdb.Queries
+	Queries     cohabdb.Querier
 }
 
 func (o *Oauth2) GoogleLoginAuthz(c echo.Context) error {
@@ -250,7 +250,7 @@ func claimToNullString(m map[string]interface{}, key string) (result sql.NullStr
 	return
 }
 
-func unmarshalClaims(m map[string]interface{}, cup *cohabdb.CreateUserParams) error {
+func unmarshalClaims(m map[string]interface{}, cup *cohabdb.UpsertUserParams) error {
 	sub, ok := mapGet[string](m, "sub")
 	if !ok {
 		return fmt.Errorf("sub claim not found")
@@ -263,18 +263,15 @@ func unmarshalClaims(m map[string]interface{}, cup *cohabdb.CreateUserParams) er
 	return nil
 }
 
-func (o *Oauth2) LogUserIn(ctx context.Context, cup cohabdb.CreateUserParams, sessionID int) (cohabdb.Session, error) {
-	user, err := o.Queries.CreateUser(ctx, cup)
+func (o *Oauth2) LogUserIn(ctx context.Context, cup cohabdb.UpsertUserParams, sessionID int) (cohabdb.Session, error) {
+	user, err := o.Queries.UpsertUser(ctx, cup)
 	if err != nil {
 		return cohabdb.Session{}, fmt.Errorf("error upserting user: %v", err)
 	}
 
-	return o.Queries.CreateSession(ctx, cohabdb.CreateSessionParams{
-		ID: int64(sessionID),
-		UserID: sql.NullInt64{
-			Int64: user.ID,
-			Valid: true,
-		},
+	return o.Queries.UpsertSession(ctx, cohabdb.UpsertSessionParams{
+		ID:     int64(sessionID),
+		UserID: user.ID,
 	})
 }
 
@@ -306,7 +303,7 @@ func (o *Oauth2) GoogleCallbackAuthn(c echo.Context) error {
 		return fmt.Errorf("error creating validator: %v", err)
 	}
 
-	var cup cohabdb.CreateUserParams
+	var cup cohabdb.UpsertUserParams
 	if err := unmarshalClaims(pay.Claims, &cup); err != nil {
 		return err
 	}

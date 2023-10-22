@@ -10,7 +10,7 @@ import (
 
 type Session struct {
 	ID                   int64
-	UserID               sql.NullInt64
+	UserID               int64
 	CreatedAt            int64
 	IsLoggedIn           bool
 	GoogleForceApproval  bool

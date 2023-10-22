@@ -11,8 +11,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func OpenInMemory() (*sql.DB, error) { return Open(":memory:") }
-
 func TestQueries(t *testing.T) {
 	ctx := context.Background()
 
@@ -27,7 +25,7 @@ func TestQueries(t *testing.T) {
 	}
 	queries := New(db)
 
-	user, err := queries.CreateUser(ctx, CreateUserParams{Name: sql.NullString{String: "Test User", Valid: true}, Sub: "Test Sub"})
+	user, err := queries.UpsertUser(ctx, UpsertUserParams{Name: sql.NullString{String: "Test User", Valid: true}, Sub: "Test Sub"})
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -40,10 +38,10 @@ func TestQueries(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	csp := CreateSessionParams{
-		UserID: sql.NullInt64{Int64: user.ID, Valid: true},
+	csp := UpsertSessionParams{
+		UserID: user.ID,
 	}
-	session, err := queries.CreateSession(ctx, csp)
+	session, err := queries.UpsertSession(ctx, csp)
 	if err != nil {
 		t.Errorf("%v", err)
 	}

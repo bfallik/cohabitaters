@@ -5,7 +5,7 @@ WORKDIR /build
 RUN dnf update -y && \
     dnf install -y git-core make shellcheck which && \
     dnf -y groupinstall "Development Tools" && \
-    dnf install -y https://github.com/golangci/golangci-lint/releases/download/v1.54.1/golangci-lint-1.54.1-linux-amd64.rpm
+    dnf install -y https://github.com/golangci/golangci-lint/releases/download/v1.55.0/golangci-lint-1.55.0-linux-amd64.rpm
 
 ARG GO_TARBALL=go1.21.1.linux-amd64.tar.gz
 RUN curl -sLO https://go.dev/dl/${GO_TARBALL} && \

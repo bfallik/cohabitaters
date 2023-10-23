@@ -22,58 +22,56 @@ func PageError() templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<!doctype html><html>")
-		if err != nil {
+		var_2 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			templBuffer, templIsBuffer := w.(*bytes.Buffer)
+			if !templIsBuffer {
+				templBuffer = templ.GetBuffer()
+				defer templ.ReleaseBuffer(templBuffer)
+			}
+			_, err = templBuffer.WriteString("<div class=\"flex min-h-screen w-full flex-col grow word-break\">")
+			if err != nil {
+				return err
+			}
+			err = PartialNavbar().Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<div class=\"flex flex-auto\"><div class=\"w-full p-2 bg-white\"><p>")
+			if err != nil {
+				return err
+			}
+			var_3 := `Oops.`
+			_, err = templBuffer.WriteString(var_3)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</p> ")
+			if err != nil {
+				return err
+			}
+			var_4 := `Something went wrong`
+			_, err = templBuffer.WriteString(var_4)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</div></div>")
+			if err != nil {
+				return err
+			}
+			err = PartialFooter().Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</div>")
+			if err != nil {
+				return err
+			}
+			if !templIsBuffer {
+				_, err = io.Copy(w, templBuffer)
+			}
 			return err
-		}
-		err = PartialHead().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("<body><div class=\"flex min-h-screen w-full flex-col grow word-break\">")
-		if err != nil {
-			return err
-		}
-		err = PartialNavbar().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("<div class=\"flex flex-auto\"><div class=\"w-full p-2 bg-white\"><p>")
-		if err != nil {
-			return err
-		}
-		var_2 := `Oops.`
-		_, err = templBuffer.WriteString(var_2)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</p> ")
-		if err != nil {
-			return err
-		}
-		var_3 := `Something went wrong`
-		_, err = templBuffer.WriteString(var_3)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</div></div>")
-		if err != nil {
-			return err
-		}
-		err = PartialFooter().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</div><script src=\"https://unpkg.com/flowbite@1.5.4/dist/flowbite.js\">")
-		if err != nil {
-			return err
-		}
-		var_4 := ``
-		_, err = templBuffer.WriteString(var_4)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</script></body></html>")
+		})
+		err = wrapBody().Render(templ.WithChildren(ctx, var_2), templBuffer)
 		if err != nil {
 			return err
 		}

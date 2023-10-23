@@ -22,138 +22,136 @@ func PageAbout() templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<!doctype html><html>")
-		if err != nil {
+		var_2 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			templBuffer, templIsBuffer := w.(*bytes.Buffer)
+			if !templIsBuffer {
+				templBuffer = templ.GetBuffer()
+				defer templ.ReleaseBuffer(templBuffer)
+			}
+			_, err = templBuffer.WriteString("<div class=\"flex min-h-screen w-full flex-col grow word-break\">")
+			if err != nil {
+				return err
+			}
+			err = PartialNavbar().Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<div class=\"flex flex-auto\">")
+			if err != nil {
+				return err
+			}
+			err = PartialSidebar().Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<div class=\"p-4 bg-white w-3/4 text-xl\"><i class=\"text-8xl fa-solid fa-gifts float-left pr-4\"></i><p class=\"py-4\">")
+			if err != nil {
+				return err
+			}
+			var_3 := `Cohabitaters lets you aggregate your Google Contacts by their mailing`
+			_, err = templBuffer.WriteString(var_3)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			var_4 := `address, created ahead of the holiday season to help simplify our holiday cards. Instead of keeping`
+			_, err = templBuffer.WriteString(var_4)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			var_5 := `a separate list or spreadsheet just for address, you can generate the names and addresses`
+			_, err = templBuffer.WriteString(var_5)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			var_6 := `directly from your contacts.`
+			_, err = templBuffer.WriteString(var_6)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</p><p class=\"pt-2\">")
+			if err != nil {
+				return err
+			}
+			var_7 := `Basic workflow`
+			_, err = templBuffer.WriteString(var_7)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</p><ol class=\"list-decimal list-inside py-2\"><li>")
+			if err != nil {
+				return err
+			}
+			var_8 := `make sure addresses are up-to-date in `
+			_, err = templBuffer.WriteString(var_8)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" <a href=\"https://contacts.google.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-medium\n                        text-blue-600 underline dark:text-blue-500 hover:no-underline\">")
+			if err != nil {
+				return err
+			}
+			var_9 := `Google Contacts`
+			_, err = templBuffer.WriteString(var_9)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</a></li><li>")
+			if err != nil {
+				return err
+			}
+			var_10 := `(optional) apply a label to the contacts you want included`
+			_, err = templBuffer.WriteString(var_10)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</li><li>")
+			if err != nil {
+				return err
+			}
+			var_11 := `select your new label or an existing one (e.g. "Starred") from the drop-down`
+			_, err = templBuffer.WriteString(var_11)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</li></ol><p>")
+			if err != nil {
+				return err
+			}
+			var_12 := `You'll see a table of your contacts grouped by their address. It's a Christmas miracle.`
+			_, err = templBuffer.WriteString(var_12)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</p></div></div>")
+			if err != nil {
+				return err
+			}
+			err = PartialFooter().Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</div>")
+			if err != nil {
+				return err
+			}
+			if !templIsBuffer {
+				_, err = io.Copy(w, templBuffer)
+			}
 			return err
-		}
-		err = PartialHead().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("<body><div class=\"flex min-h-screen w-full flex-col grow word-break\">")
-		if err != nil {
-			return err
-		}
-		err = PartialNavbar().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("<div class=\"flex flex-auto\">")
-		if err != nil {
-			return err
-		}
-		err = PartialSidebar().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("<div class=\"p-4 bg-white w-3/4 text-xl\"><i class=\"text-8xl fa-solid fa-gifts float-left pr-4\"></i><p class=\"py-4\">")
-		if err != nil {
-			return err
-		}
-		var_2 := `Cohabitaters lets you aggregate your Google Contacts by their mailing`
-		_, err = templBuffer.WriteString(var_2)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" ")
-		if err != nil {
-			return err
-		}
-		var_3 := `address, created ahead of the holiday season to help simplify our holiday cards. Instead of keeping`
-		_, err = templBuffer.WriteString(var_3)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" ")
-		if err != nil {
-			return err
-		}
-		var_4 := `a separate list or spreadsheet just for address, you can generate the names and addresses`
-		_, err = templBuffer.WriteString(var_4)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" ")
-		if err != nil {
-			return err
-		}
-		var_5 := `directly from your contacts.`
-		_, err = templBuffer.WriteString(var_5)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</p><p class=\"pt-2\">")
-		if err != nil {
-			return err
-		}
-		var_6 := `Basic workflow`
-		_, err = templBuffer.WriteString(var_6)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</p><ol class=\"list-decimal list-inside py-2\"><li>")
-		if err != nil {
-			return err
-		}
-		var_7 := `make sure addresses are up-to-date in `
-		_, err = templBuffer.WriteString(var_7)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" <a href=\"https://contacts.google.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-medium\n                            text-blue-600 underline dark:text-blue-500 hover:no-underline\">")
-		if err != nil {
-			return err
-		}
-		var_8 := `Google Contacts`
-		_, err = templBuffer.WriteString(var_8)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</a></li><li>")
-		if err != nil {
-			return err
-		}
-		var_9 := `(optional) apply a label to the contacts you want included`
-		_, err = templBuffer.WriteString(var_9)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</li><li>")
-		if err != nil {
-			return err
-		}
-		var_10 := `select your new label or an existing one (e.g. "Starred") from the drop-down`
-		_, err = templBuffer.WriteString(var_10)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</li></ol><p>")
-		if err != nil {
-			return err
-		}
-		var_11 := `You'll see a table of your contacts grouped by their address. It's a Christmas miracle.`
-		_, err = templBuffer.WriteString(var_11)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</p></div></div>")
-		if err != nil {
-			return err
-		}
-		err = PartialFooter().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</div><script src=\"https://unpkg.com/flowbite@1.5.4/dist/flowbite.js\">")
-		if err != nil {
-			return err
-		}
-		var_12 := ``
-		_, err = templBuffer.WriteString(var_12)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</script></body></html>")
+		})
+		err = wrapBody().Render(templ.WithChildren(ctx, var_2), templBuffer)
 		if err != nil {
 			return err
 		}

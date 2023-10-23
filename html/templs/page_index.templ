@@ -46,41 +46,57 @@ templ tableResults(input PageIndexInput) {
 	</div>
 }
 
-templ PageIndex(inp PageIndexInput) {
+templ wrapBody() {
 	<!DOCTYPE html>
 	<html>
-		@PartialHead()
+		<head>
+			<meta charset="utf-8"/>
+			<script src="https://unpkg.com/htmx.org@1.9.4" integrity="sha384-zUfuhFKKZCbHTY6aRR46gxiqszMk5tcHjsVFxnUo8VMus4kHGVdIYVbOYYNlKmHV" crossorigin="anonymous"></script>
+			<script src="https://unpkg.com/hyperscript.org@0.9.11"></script>
+			<link href="/static/tailwindcss/output.css" rel="stylesheet"/>
+			<link href="https://unpkg.com/flowbite@1.5.4/dist/flowbite.min.css" rel="stylesheet"/>
+			<link href="/static/fontawesome/css/fontawesome.css" rel="stylesheet"/>
+			<link href="/static/fontawesome/css/brands.css" rel="stylesheet"/>
+			<link href="/static/fontawesome/css/solid.css" rel="stylesheet"/>
+			<title>Hello</title>
+		</head>
 		<body>
-			<script src="https://accounts.google.com/gsi/client" async defer></script>
-			<div class="flex min-h-screen w-full flex-col grow word-break">
-				@PartialNavbar()
-				<div
- 					id="g_id_onload"
- 					data-client_id={ inp.ClientID }
- 					data-login_uri={ inp.LoginURL }
- 					data-auto_prompt="false"
-				></div>
-				<div
- 					class="g_id_signin"
- 					data-type="standard"
- 					data-size="large"
- 					data-theme="outline"
- 					data-text="sign_in_with"
- 					data-shape="rectangular"
- 					data-logo_alignment="left"
-				></div>
-				<div class="flex flex-auto">
-					@PartialSidebar()
-					<div class="w-full p-2 bg-white">
-						<p class="text-xl py-4">@welcomeMessage(inp.WelcomeName)</p>
-						@groupResults(inp)
-						@tableResults(inp)
-					</div>
-				</div>
-				@PartialFooter()
-			</div>
+			{ children... }
 			<script src="https://unpkg.com/flowbite@1.5.4/dist/flowbite.js"></script>
 		</body>
 	</html>
+}
+
+templ PageIndex(inp PageIndexInput) {
+	@wrapBody() {
+		<script src="https://accounts.google.com/gsi/client" async defer></script>
+		<div class="flex min-h-screen w-full flex-col grow word-break">
+			@PartialNavbar()
+			<div
+ 				id="g_id_onload"
+ 				data-client_id={ inp.ClientID }
+ 				data-login_uri={ inp.LoginURL }
+ 				data-auto_prompt="false"
+			></div>
+			<div
+ 				class="g_id_signin"
+ 				data-type="standard"
+ 				data-size="large"
+ 				data-theme="outline"
+ 				data-text="sign_in_with"
+ 				data-shape="rectangular"
+ 				data-logo_alignment="left"
+			></div>
+			<div class="flex flex-auto">
+				@PartialSidebar()
+				<div class="w-full p-2 bg-white">
+					<p class="text-xl py-4">@welcomeMessage(inp.WelcomeName)</p>
+					@groupResults(inp)
+					@tableResults(inp)
+				</div>
+			</div>
+			@PartialFooter()
+		</div>
+	}
 }
 

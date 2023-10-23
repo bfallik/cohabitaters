@@ -183,7 +183,7 @@ func tableResults(input PageIndexInput) templ.Component {
 	})
 }
 
-func PageIndex(inp PageIndexInput) templ.Component {
+func wrapBody() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -196,15 +196,7 @@ func PageIndex(inp PageIndexInput) templ.Component {
 			var_9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<!doctype html><html>")
-		if err != nil {
-			return err
-		}
-		err = PartialHead().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("<body><script src=\"https://accounts.google.com/gsi/client\" async defer>")
+		_, err = templBuffer.WriteString("<!doctype html><html><head><meta charset=\"utf-8\"><script src=\"https://unpkg.com/htmx.org@1.9.4\" integrity=\"sha384-zUfuhFKKZCbHTY6aRR46gxiqszMk5tcHjsVFxnUo8VMus4kHGVdIYVbOYYNlKmHV\" crossorigin=\"anonymous\">")
 		if err != nil {
 			return err
 		}
@@ -213,67 +205,7 @@ func PageIndex(inp PageIndexInput) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</script><div class=\"flex min-h-screen w-full flex-col grow word-break\">")
-		if err != nil {
-			return err
-		}
-		err = PartialNavbar().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("<div id=\"g_id_onload\" data-client_id=\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(templ.EscapeString(inp.ClientID))
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\" data-login_uri=\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(templ.EscapeString(inp.LoginURL))
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\" data-auto_prompt=\"false\"></div><div class=\"g_id_signin\" data-type=\"standard\" data-size=\"large\" data-theme=\"outline\" data-text=\"sign_in_with\" data-shape=\"rectangular\" data-logo_alignment=\"left\"></div><div class=\"flex flex-auto\">")
-		if err != nil {
-			return err
-		}
-		err = PartialSidebar().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("<div class=\"w-full p-2 bg-white\"><p class=\"text-xl py-4\">")
-		if err != nil {
-			return err
-		}
-		err = welcomeMessage(inp.WelcomeName).Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</p>")
-		if err != nil {
-			return err
-		}
-		err = groupResults(inp).Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		err = tableResults(inp).Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</div></div>")
-		if err != nil {
-			return err
-		}
-		err = PartialFooter().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</div><script src=\"https://unpkg.com/flowbite@1.5.4/dist/flowbite.js\">")
+		_, err = templBuffer.WriteString("</script><script src=\"https://unpkg.com/hyperscript.org@0.9.11\">")
 		if err != nil {
 			return err
 		}
@@ -282,7 +214,141 @@ func PageIndex(inp PageIndexInput) templ.Component {
 		if err != nil {
 			return err
 		}
+		_, err = templBuffer.WriteString("</script><link href=\"/static/tailwindcss/output.css\" rel=\"stylesheet\"><link href=\"https://unpkg.com/flowbite@1.5.4/dist/flowbite.min.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/fontawesome.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/brands.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/solid.css\" rel=\"stylesheet\"><title>")
+		if err != nil {
+			return err
+		}
+		var_12 := `Hello`
+		_, err = templBuffer.WriteString(var_12)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</title></head><body>")
+		if err != nil {
+			return err
+		}
+		err = var_9.Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<script src=\"https://unpkg.com/flowbite@1.5.4/dist/flowbite.js\">")
+		if err != nil {
+			return err
+		}
+		var_13 := ``
+		_, err = templBuffer.WriteString(var_13)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</script></body></html>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func PageIndex(inp PageIndexInput) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_14 := templ.GetChildren(ctx)
+		if var_14 == nil {
+			var_14 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		var_15 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			templBuffer, templIsBuffer := w.(*bytes.Buffer)
+			if !templIsBuffer {
+				templBuffer = templ.GetBuffer()
+				defer templ.ReleaseBuffer(templBuffer)
+			}
+			_, err = templBuffer.WriteString("<script src=\"https://accounts.google.com/gsi/client\" async defer>")
+			if err != nil {
+				return err
+			}
+			var_16 := ``
+			_, err = templBuffer.WriteString(var_16)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</script> <div class=\"flex min-h-screen w-full flex-col grow word-break\">")
+			if err != nil {
+				return err
+			}
+			err = PartialNavbar().Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<div id=\"g_id_onload\" data-client_id=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(inp.ClientID))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" data-login_uri=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(inp.LoginURL))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" data-auto_prompt=\"false\"></div><div class=\"g_id_signin\" data-type=\"standard\" data-size=\"large\" data-theme=\"outline\" data-text=\"sign_in_with\" data-shape=\"rectangular\" data-logo_alignment=\"left\"></div><div class=\"flex flex-auto\">")
+			if err != nil {
+				return err
+			}
+			err = PartialSidebar().Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<div class=\"w-full p-2 bg-white\"><p class=\"text-xl py-4\">")
+			if err != nil {
+				return err
+			}
+			err = welcomeMessage(inp.WelcomeName).Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</p>")
+			if err != nil {
+				return err
+			}
+			err = groupResults(inp).Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			err = tableResults(inp).Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</div></div>")
+			if err != nil {
+				return err
+			}
+			err = PartialFooter().Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</div>")
+			if err != nil {
+				return err
+			}
+			if !templIsBuffer {
+				_, err = io.Copy(w, templBuffer)
+			}
+			return err
+		})
+		err = wrapBody().Render(templ.WithChildren(ctx, var_15), templBuffer)
 		if err != nil {
 			return err
 		}

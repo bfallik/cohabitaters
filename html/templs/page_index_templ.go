@@ -251,7 +251,7 @@ func wrapBody() templ.Component {
 	})
 }
 
-func PageIndex(inp PageIndexInput) templ.Component {
+func standardLayout() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -264,82 +264,125 @@ func PageIndex(inp PageIndexInput) templ.Component {
 			var_14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var_15 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		_, err = templBuffer.WriteString("<div class=\"flex min-h-screen w-full flex-col grow word-break\">")
+		if err != nil {
+			return err
+		}
+		err = PartialNavbar().Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<div class=\"flex flex-auto\">")
+		if err != nil {
+			return err
+		}
+		err = PartialSidebar().Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		err = var_14.Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</div>")
+		if err != nil {
+			return err
+		}
+		err = PartialFooter().Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</div>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func PageIndex(inp PageIndexInput) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_15 := templ.GetChildren(ctx)
+		if var_15 == nil {
+			var_15 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		var_16 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			templBuffer, templIsBuffer := w.(*bytes.Buffer)
 			if !templIsBuffer {
 				templBuffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templBuffer)
 			}
-			_, err = templBuffer.WriteString("<div class=\"flex min-h-screen w-full flex-col grow word-break\">")
-			if err != nil {
+			var_17 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+				templBuffer, templIsBuffer := w.(*bytes.Buffer)
+				if !templIsBuffer {
+					templBuffer = templ.GetBuffer()
+					defer templ.ReleaseBuffer(templBuffer)
+				}
+				_, err = templBuffer.WriteString("<div class=\"w-full p-2 bg-white\"><script src=\"https://accounts.google.com/gsi/client\" async defer>")
+				if err != nil {
+					return err
+				}
+				var_18 := ``
+				_, err = templBuffer.WriteString(var_18)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</script><div id=\"g_id_onload\" data-client_id=\"")
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(templ.EscapeString(inp.ClientID))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\" data-login_uri=\"")
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(templ.EscapeString(inp.LoginURL))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\" data-auto_prompt=\"false\"></div><div class=\"g_id_signin\" data-type=\"standard\" data-size=\"large\" data-theme=\"outline\" data-text=\"sign_in_with\" data-shape=\"rectangular\" data-logo_alignment=\"left\"></div><p class=\"text-xl py-4\">")
+				if err != nil {
+					return err
+				}
+				err = welcomeMessage(inp.WelcomeName).Render(ctx, templBuffer)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</p>")
+				if err != nil {
+					return err
+				}
+				err = groupResults(inp).Render(ctx, templBuffer)
+				if err != nil {
+					return err
+				}
+				err = tableResults(inp).Render(ctx, templBuffer)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</div>")
+				if err != nil {
+					return err
+				}
+				if !templIsBuffer {
+					_, err = io.Copy(w, templBuffer)
+				}
 				return err
-			}
-			err = PartialNavbar().Render(ctx, templBuffer)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("<div class=\"flex flex-auto\">")
-			if err != nil {
-				return err
-			}
-			err = PartialSidebar().Render(ctx, templBuffer)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("<div class=\"w-full p-2 bg-white\"><script src=\"https://accounts.google.com/gsi/client\" async defer>")
-			if err != nil {
-				return err
-			}
-			var_16 := ``
-			_, err = templBuffer.WriteString(var_16)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</script><div id=\"g_id_onload\" data-client_id=\"")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(templ.EscapeString(inp.ClientID))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\" data-login_uri=\"")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(templ.EscapeString(inp.LoginURL))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\" data-auto_prompt=\"false\"></div><div class=\"g_id_signin\" data-type=\"standard\" data-size=\"large\" data-theme=\"outline\" data-text=\"sign_in_with\" data-shape=\"rectangular\" data-logo_alignment=\"left\"></div><p class=\"text-xl py-4\">")
-			if err != nil {
-				return err
-			}
-			err = welcomeMessage(inp.WelcomeName).Render(ctx, templBuffer)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</p>")
-			if err != nil {
-				return err
-			}
-			err = groupResults(inp).Render(ctx, templBuffer)
-			if err != nil {
-				return err
-			}
-			err = tableResults(inp).Render(ctx, templBuffer)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</div></div>")
-			if err != nil {
-				return err
-			}
-			err = PartialFooter().Render(ctx, templBuffer)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</div>")
+			})
+			err = standardLayout().Render(templ.WithChildren(ctx, var_17), templBuffer)
 			if err != nil {
 				return err
 			}
@@ -348,7 +391,7 @@ func PageIndex(inp PageIndexInput) templ.Component {
 			}
 			return err
 		})
-		err = wrapBody().Render(templ.WithChildren(ctx, var_15), templBuffer)
+		err = wrapBody().Render(templ.WithChildren(ctx, var_16), templBuffer)
 		if err != nil {
 			return err
 		}

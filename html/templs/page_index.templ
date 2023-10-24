@@ -69,27 +69,27 @@ templ wrapBody() {
 
 templ PageIndex(inp PageIndexInput) {
 	@wrapBody() {
-		<script src="https://accounts.google.com/gsi/client" async defer></script>
 		<div class="flex min-h-screen w-full flex-col grow word-break">
 			@PartialNavbar()
-			<div
- 				id="g_id_onload"
- 				data-client_id={ inp.ClientID }
- 				data-login_uri={ inp.LoginURL }
- 				data-auto_prompt="false"
-			></div>
-			<div
- 				class="g_id_signin"
- 				data-type="standard"
- 				data-size="large"
- 				data-theme="outline"
- 				data-text="sign_in_with"
- 				data-shape="rectangular"
- 				data-logo_alignment="left"
-			></div>
 			<div class="flex flex-auto">
 				@PartialSidebar()
 				<div class="w-full p-2 bg-white">
+					<script src="https://accounts.google.com/gsi/client" async defer></script>
+					<div
+						id="g_id_onload"
+						data-client_id={ inp.ClientID }
+						data-login_uri={ inp.LoginURL }
+						data-auto_prompt="false"
+					></div>
+					<div
+						class="g_id_signin"
+						data-type="standard"
+						data-size="large"
+						data-theme="outline"
+						data-text="sign_in_with"
+						data-shape="rectangular"
+						data-logo_alignment="left"
+					></div>
 					<p class="text-xl py-4">@welcomeMessage(inp.WelcomeName)</p>
 					@groupResults(inp)
 					@tableResults(inp)

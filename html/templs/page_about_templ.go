@@ -89,16 +89,16 @@ func PageAbout() templ.Component {
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</p><ol class=\"list-decimal list-inside py-2\"><li>")
+			_, err = templBuffer.WriteString("</p><ol class=\"list-decimal list-inside py-2\"><li><span>")
 			if err != nil {
 				return err
 			}
-			var_8 := `make sure addresses are up-to-date in `
+			var_8 := `make sure addresses are up-to-date in`
 			_, err = templBuffer.WriteString(var_8)
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(" <a href=\"https://contacts.google.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-medium\n                        text-blue-600 underline dark:text-blue-500 hover:no-underline\">")
+			_, err = templBuffer.WriteString(" <a href=\"https://contacts.google.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline\">")
 			if err != nil {
 				return err
 			}
@@ -107,7 +107,7 @@ func PageAbout() templ.Component {
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</a></li><li>")
+			_, err = templBuffer.WriteString("</a></span></li><li>")
 			if err != nil {
 				return err
 			}

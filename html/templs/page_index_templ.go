@@ -270,7 +270,23 @@ func PageIndex(inp PageIndexInput) templ.Component {
 				templBuffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templBuffer)
 			}
-			_, err = templBuffer.WriteString("<script src=\"https://accounts.google.com/gsi/client\" async defer>")
+			_, err = templBuffer.WriteString("<div class=\"flex min-h-screen w-full flex-col grow word-break\">")
+			if err != nil {
+				return err
+			}
+			err = PartialNavbar().Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<div class=\"flex flex-auto\">")
+			if err != nil {
+				return err
+			}
+			err = PartialSidebar().Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<div class=\"w-full p-2 bg-white\"><script src=\"https://accounts.google.com/gsi/client\" async defer>")
 			if err != nil {
 				return err
 			}
@@ -279,15 +295,7 @@ func PageIndex(inp PageIndexInput) templ.Component {
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</script> <div class=\"flex min-h-screen w-full flex-col grow word-break\">")
-			if err != nil {
-				return err
-			}
-			err = PartialNavbar().Render(ctx, templBuffer)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("<div id=\"g_id_onload\" data-client_id=\"")
+			_, err = templBuffer.WriteString("</script><div id=\"g_id_onload\" data-client_id=\"")
 			if err != nil {
 				return err
 			}
@@ -303,15 +311,7 @@ func PageIndex(inp PageIndexInput) templ.Component {
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("\" data-auto_prompt=\"false\"></div><div class=\"g_id_signin\" data-type=\"standard\" data-size=\"large\" data-theme=\"outline\" data-text=\"sign_in_with\" data-shape=\"rectangular\" data-logo_alignment=\"left\"></div><div class=\"flex flex-auto\">")
-			if err != nil {
-				return err
-			}
-			err = PartialSidebar().Render(ctx, templBuffer)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("<div class=\"w-full p-2 bg-white\"><p class=\"text-xl py-4\">")
+			_, err = templBuffer.WriteString("\" data-auto_prompt=\"false\"></div><div class=\"g_id_signin\" data-type=\"standard\" data-size=\"large\" data-theme=\"outline\" data-text=\"sign_in_with\" data-shape=\"rectangular\" data-logo_alignment=\"left\"></div><p class=\"text-xl py-4\">")
 			if err != nil {
 				return err
 			}

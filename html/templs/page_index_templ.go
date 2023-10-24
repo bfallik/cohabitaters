@@ -214,7 +214,7 @@ func wrapBody() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</script><link href=\"/static/tailwindcss/output.css\" rel=\"stylesheet\"><link href=\"https://unpkg.com/flowbite@1.5.4/dist/flowbite.min.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/fontawesome.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/brands.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/solid.css\" rel=\"stylesheet\"><title>")
+		_, err = templBuffer.WriteString("</script><link href=\"/static/tailwindcss/output.css\" rel=\"stylesheet\"><link href=\"https://unpkg.com/flowbite@1.8.1/dist/flowbite.min.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/fontawesome.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/brands.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/solid.css\" rel=\"stylesheet\"><title>")
 		if err != nil {
 			return err
 		}
@@ -231,7 +231,7 @@ func wrapBody() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<script src=\"https://unpkg.com/flowbite@1.5.4/dist/flowbite.js\">")
+		_, err = templBuffer.WriteString("<script src=\"https://unpkg.com/flowbite@1.8.1/dist/flowbite.js\">")
 		if err != nil {
 			return err
 		}

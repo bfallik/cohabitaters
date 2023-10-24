@@ -9,6 +9,11 @@ import "context"
 import "io"
 import "bytes"
 
+import (
+	"fmt"
+	"time"
+)
+
 func PartialFooter() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
@@ -22,34 +27,39 @@ func PartialFooter() templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<footer class=\"p-4 bg-gray-100 rounded-lg shadow md:flex md:items-center md:justify-center md:p-6 dark:bg-gray-800\"><span class=\"text-sm text-gray-500 sm:text-center dark:text-gray-400\">")
+		_, err = templBuffer.WriteString("<footer class=\"p-4 bg-gray-100 rounded-lg shadow md:flex md:items-center md:justify-center md:p-6 dark:bg-gray-800\"><span class=\"text-sm text-gray-500 sm:text-center dark:text-gray-400\"><span>")
 		if err != nil {
 			return err
 		}
-		var_2 := `© 2022 `
-		_, err = templBuffer.WriteString(var_2)
+		var var_2 string = fmt.Sprintf("© %d", time.Now().Year())
+		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(" <a href=\"https://bfallik.net/\" class=\"hover:underline\">")
-		if err != nil {
-			return err
-		}
-		var_3 := `Brian Fallik`
+		var_3 := `&nbsp;`
 		_, err = templBuffer.WriteString(var_3)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</a> ")
+		_, err = templBuffer.WriteString("</span><span><a href=\"https://bfallik.net/\" class=\"hover:underline\">")
 		if err != nil {
 			return err
 		}
-		var_4 := `. All Rights Reserved.`
+		var_4 := `Brian Fallik`
 		_, err = templBuffer.WriteString(var_4)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</span></footer>")
+		_, err = templBuffer.WriteString("</a>")
+		if err != nil {
+			return err
+		}
+		var_5 := `. All Rights Reserved.`
+		_, err = templBuffer.WriteString(var_5)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</span></span></footer>")
 		if err != nil {
 			return err
 		}

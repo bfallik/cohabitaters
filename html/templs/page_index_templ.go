@@ -276,10 +276,6 @@ func standardLayout() templ.Component {
 		if err != nil {
 			return err
 		}
-		err = PartialSidebar().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
 		err = var_14.Render(ctx, templBuffer)
 		if err != nil {
 			return err

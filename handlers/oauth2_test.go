@@ -93,14 +93,21 @@ func Test_LogUserIn(t *testing.T) {
 					return err
 				}
 
-				_, err = q.InsertSession(ctx, cohabdb.InsertSessionParams{
+				if _, err = q.InsertSession(ctx, cohabdb.InsertSessionParams{
 					ID:     int64(origSessionID),
 					UserID: user.ID,
-				})
-				return err
+				}); err != nil {
+					return err
+				}
+
+				return q.ExpireSession(ctx, int64(origSessionID))
 			},
 		},
 	}
+
+	/*
+
+	 */
 
 	for _, test := range tests {
 		t.Run(test.Desc, func(t *testing.T) {
@@ -127,6 +134,10 @@ func Test_LogUserIn(t *testing.T) {
 
 			if !cmp.Equal(sess.ID, int64(origSessionID)) {
 				t.Errorf("unexpected session ID, got: %v, want: %v", sess.ID, origSessionID)
+			}
+
+			if !sess.IsLoggedIn {
+				t.Errorf("unexpected user not logged in")
 			}
 		})
 	}

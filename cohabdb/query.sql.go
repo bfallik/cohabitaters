@@ -229,7 +229,9 @@ INSERT INTO sessions (
   ?, ?
 )
 ON CONFLICT(id, user_id) DO UPDATE SET
-  id=excluded.id
+  id=excluded.id,
+  created_at=strftime('%s','now'),
+  is_logged_in=true
 RETURNING id, user_id, created_at, is_logged_in, google_force_approval, contact_groups_json, selected_resource_name
 `
 

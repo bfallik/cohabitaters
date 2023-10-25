@@ -34,7 +34,9 @@ INSERT INTO sessions (
   ?, ?
 )
 ON CONFLICT(id, user_id) DO UPDATE SET
-  id=excluded.id
+  id=excluded.id,
+  created_at=strftime('%s','now'),
+  is_logged_in=true
 RETURNING *;
 
 -- name: ExpireSession :exec

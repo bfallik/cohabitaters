@@ -24,7 +24,7 @@ import (
 
 const sessionName = "default_session"
 const clientID = "1048297799487-pibn8vimfmlii915gn5frkjgorq3oqhn.apps.googleusercontent.com"
-const sessionTimeout = 60 * time.Second
+const sessionTimeout = 600 * time.Second
 
 type googleSvcs struct {
 	TokenSource oauth2.TokenSource

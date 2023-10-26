@@ -133,7 +133,7 @@ func PageAbout() templ.Component {
 				}
 				return err
 			})
-			err = standardLayout().Render(templ.WithChildren(ctx, var_3), templBuffer)
+			err = standardLayout(false).Render(templ.WithChildren(ctx, var_3), templBuffer)
 			if err != nil {
 				return err
 			}

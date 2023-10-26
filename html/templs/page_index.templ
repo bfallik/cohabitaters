@@ -8,6 +8,7 @@ import (
 type PageIndexInput struct {
     ClientID string
     LoginURL string
+	IsLoggedIn bool
     WelcomeName string
 	Groups []*people.ContactGroup
 	TableResults         []cohabitaters.XmasCard
@@ -67,9 +68,9 @@ templ wrapBody() {
 	</html>
 }
 
-templ standardLayout() {
+templ standardLayout(is_logged_in bool) {
 	<div class="flex min-h-screen w-full flex-col grow word-break">
-		@PartialNavbar()
+		@PartialNavbar(is_logged_in)
 		<div class="flex flex-auto">
 			{ children... }
 		</div>
@@ -79,29 +80,52 @@ templ standardLayout() {
 
 templ PageIndex(inp PageIndexInput) {
 	@wrapBody() {
-		@standardLayout() {
+		@standardLayout(inp.IsLoggedIn) {
 			<div class="w-full p-2 bg-white">
-				<script src="https://accounts.google.com/gsi/client" async defer></script>
-				<div
-					id="g_id_onload"
-					data-client_id={ inp.ClientID }
-					data-login_uri={ inp.LoginURL }
-					data-auto_prompt="false"
-				></div>
-				<div
-					class="g_id_signin"
-					data-type="standard"
-					data-size="large"
-					data-theme="outline"
-					data-text="sign_in_with"
-					data-shape="rectangular"
-					data-logo_alignment="left"
-				></div>
-				<p class="text-xl py-4">@welcomeMessage(inp.WelcomeName)</p>
-				@groupResults(inp)
-				@tableResults(inp)
+				@mainBody(inp)
 			</div>
 		}
+	}
+}
+
+templ mainBody(inp PageIndexInput) {
+	if inp.IsLoggedIn {
+		<div class="p-8">
+			<p class="text-xl py-4">@welcomeMessage(inp.WelcomeName)</p>
+			@groupResults(inp)
+			@tableResults(inp)
+		</div>
+	} else {
+		<div class="p-8">
+			<div class="w-full max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-6 md:p-8 dark:bg-gray-800 dark:border-gray-700">
+				<div class="space-y-6">
+					<h5 class="text-xl font-medium text-gray-900 dark:text-white">Please sign in</h5>
+					<script src="https://accounts.google.com/gsi/client" async defer></script>
+					<div
+ 						id="g_id_onload"
+ 						data-client_id={ inp.ClientID }
+ 						data-login_uri={ inp.LoginURL }
+					></div>
+					<div
+ 						class="g_id_signin"
+ 						data-type="standard"
+ 						data-size="large"
+ 						data-theme="outline"
+ 						data-text="sign_in_with"
+ 						data-shape="rectangular"
+ 						data-logo_alignment="left"
+ 						data-width="202"
+					></div>
+					<div class="flex items-start">
+						<p>Only support logging in with your Google account since that's where we pull contact data from</p>
+					</div>
+					<div class="text-sm font-medium text-gray-500 dark:text-gray-300">
+						No Google account?
+						<a href="https://accounts.google.com/signup" class="text-blue-700 hover:underline dark:text-blue-500">Create one</a>
+					</div>
+				</div>
+			</div>
+		</div>
 	}
 }
 

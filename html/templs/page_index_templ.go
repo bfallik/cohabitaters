@@ -17,6 +17,7 @@ import (
 type PageIndexInput struct {
 	ClientID             string
 	LoginURL             string
+	IsLoggedIn           bool
 	WelcomeName          string
 	Groups               []*people.ContactGroup
 	TableResults         []cohabitaters.XmasCard
@@ -251,7 +252,7 @@ func wrapBody() templ.Component {
 	})
 }
 
-func standardLayout() templ.Component {
+func standardLayout(is_logged_in bool) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -268,7 +269,7 @@ func standardLayout() templ.Component {
 		if err != nil {
 			return err
 		}
-		err = PartialNavbar().Render(ctx, templBuffer)
+		err = PartialNavbar(is_logged_in).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
@@ -324,48 +325,11 @@ func PageIndex(inp PageIndexInput) templ.Component {
 					templBuffer = templ.GetBuffer()
 					defer templ.ReleaseBuffer(templBuffer)
 				}
-				_, err = templBuffer.WriteString("<div class=\"w-full p-2 bg-white\"><script src=\"https://accounts.google.com/gsi/client\" async defer>")
+				_, err = templBuffer.WriteString("<div class=\"w-full p-2 bg-white\">")
 				if err != nil {
 					return err
 				}
-				var_18 := ``
-				_, err = templBuffer.WriteString(var_18)
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("</script><div id=\"g_id_onload\" data-client_id=\"")
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString(templ.EscapeString(inp.ClientID))
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("\" data-login_uri=\"")
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString(templ.EscapeString(inp.LoginURL))
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("\" data-auto_prompt=\"false\"></div><div class=\"g_id_signin\" data-type=\"standard\" data-size=\"large\" data-theme=\"outline\" data-text=\"sign_in_with\" data-shape=\"rectangular\" data-logo_alignment=\"left\"></div><p class=\"text-xl py-4\">")
-				if err != nil {
-					return err
-				}
-				err = welcomeMessage(inp.WelcomeName).Render(ctx, templBuffer)
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("</p>")
-				if err != nil {
-					return err
-				}
-				err = groupResults(inp).Render(ctx, templBuffer)
-				if err != nil {
-					return err
-				}
-				err = tableResults(inp).Render(ctx, templBuffer)
+				err = mainBody(inp).Render(ctx, templBuffer)
 				if err != nil {
 					return err
 				}
@@ -378,7 +342,7 @@ func PageIndex(inp PageIndexInput) templ.Component {
 				}
 				return err
 			})
-			err = standardLayout().Render(templ.WithChildren(ctx, var_17), templBuffer)
+			err = standardLayout(inp.IsLoggedIn).Render(templ.WithChildren(ctx, var_17), templBuffer)
 			if err != nil {
 				return err
 			}
@@ -390,6 +354,118 @@ func PageIndex(inp PageIndexInput) templ.Component {
 		err = wrapBody().Render(templ.WithChildren(ctx, var_16), templBuffer)
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func mainBody(inp PageIndexInput) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_18 := templ.GetChildren(ctx)
+		if var_18 == nil {
+			var_18 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		if inp.IsLoggedIn {
+			_, err = templBuffer.WriteString("<div class=\"p-8\"><p class=\"text-xl py-4\">")
+			if err != nil {
+				return err
+			}
+			err = welcomeMessage(inp.WelcomeName).Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</p>")
+			if err != nil {
+				return err
+			}
+			err = groupResults(inp).Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			err = tableResults(inp).Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</div>")
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err = templBuffer.WriteString("<div class=\"p-8\"><div class=\"w-full max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-6 md:p-8 dark:bg-gray-800 dark:border-gray-700\"><div class=\"space-y-6\"><h5 class=\"text-xl font-medium text-gray-900 dark:text-white\">")
+			if err != nil {
+				return err
+			}
+			var_19 := `Please sign in`
+			_, err = templBuffer.WriteString(var_19)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</h5><script src=\"https://accounts.google.com/gsi/client\" async defer>")
+			if err != nil {
+				return err
+			}
+			var_20 := ``
+			_, err = templBuffer.WriteString(var_20)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</script><div id=\"g_id_onload\" data-client_id=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(inp.ClientID))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" data-login_uri=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(inp.LoginURL))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"></div><div class=\"g_id_signin\" data-type=\"standard\" data-size=\"large\" data-theme=\"outline\" data-text=\"sign_in_with\" data-shape=\"rectangular\" data-logo_alignment=\"left\" data-width=\"202\"></div><div class=\"flex items-start\"><p>")
+			if err != nil {
+				return err
+			}
+			var_21 := `Only support logging in with your Google account since that's where we pull contact data from`
+			_, err = templBuffer.WriteString(var_21)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</p></div><div class=\"text-sm font-medium text-gray-500 dark:text-gray-300\">")
+			if err != nil {
+				return err
+			}
+			var_22 := `No Google account?`
+			_, err = templBuffer.WriteString(var_22)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" <a href=\"https://accounts.google.com/signup\" class=\"text-blue-700 hover:underline dark:text-blue-500\">")
+			if err != nil {
+				return err
+			}
+			var_23 := `Create one`
+			_, err = templBuffer.WriteString(var_23)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</a></div></div></div></div>")
+			if err != nil {
+				return err
+			}
 		}
 		if !templIsBuffer {
 			_, err = templBuffer.WriteTo(w)

@@ -32,7 +32,7 @@ func PageError() templ.Component {
 			if err != nil {
 				return err
 			}
-			err = PartialNavbar().Render(ctx, templBuffer)
+			err = PartialNavbar(false).Render(ctx, templBuffer)
 			if err != nil {
 				return err
 			}

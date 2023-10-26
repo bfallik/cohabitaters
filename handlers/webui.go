@@ -174,6 +174,7 @@ func (w WebUI) Root(c echo.Context) error {
 	u.Host = c.Request().Host
 	u.Path = c.Echo().Reverse(RedirectURLAuthn)
 	tmplData.LoginURL = u.String()
+	tmplData.IsLoggedIn = isLoggedIn
 
 	if isLoggedIn {
 		if err = w.fillTmplIndexData(c.Request().Context(), sessionID, "", &tmplData); err != nil {

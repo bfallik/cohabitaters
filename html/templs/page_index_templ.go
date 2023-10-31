@@ -40,14 +40,19 @@ func welcomeMessage(name string) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(name) > 0 {
-			var_2 := `Welcome&nbsp;name`
+			var_2 := `Welcome&nbsp;`
 			_, err = templBuffer.WriteString(var_2)
 			if err != nil {
 				return err
 			}
+			var var_3 string = name
+			_, err = templBuffer.WriteString(templ.EscapeString(var_3))
+			if err != nil {
+				return err
+			}
 		} else {
-			var_3 := `Welcome`
-			_, err = templBuffer.WriteString(var_3)
+			var_4 := `Welcome`
+			_, err = templBuffer.WriteString(var_4)
 			if err != nil {
 				return err
 			}
@@ -67,9 +72,9 @@ func groupResults(input PageIndexInput) templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_4 := templ.GetChildren(ctx)
-		if var_4 == nil {
-			var_4 = templ.NopComponent
+		var_5 := templ.GetChildren(ctx)
+		if var_5 == nil {
+			var_5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(input.Groups) > 0 {
@@ -77,8 +82,8 @@ func groupResults(input PageIndexInput) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_5 := `Select an option`
-			_, err = templBuffer.WriteString(var_5)
+			var_6 := `Select an option`
+			_, err = templBuffer.WriteString(var_6)
 			if err != nil {
 				return err
 			}
@@ -96,8 +101,8 @@ func groupResults(input PageIndexInput) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_6 := `Choose a contact group`
-			_, err = templBuffer.WriteString(var_6)
+			var_7 := `Choose a contact group`
+			_, err = templBuffer.WriteString(var_7)
 			if err != nil {
 				return err
 			}
@@ -128,8 +133,8 @@ func groupResults(input PageIndexInput) templ.Component {
 				if err != nil {
 					return err
 				}
-				var var_7 string = group.FormattedName
-				_, err = templBuffer.WriteString(templ.EscapeString(var_7))
+				var var_8 string = group.FormattedName
+				_, err = templBuffer.WriteString(templ.EscapeString(var_8))
 				if err != nil {
 					return err
 				}
@@ -158,9 +163,9 @@ func tableResults(input PageIndexInput) templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_8 := templ.GetChildren(ctx)
-		if var_8 == nil {
-			var_8 = templ.NopComponent
+		var_9 := templ.GetChildren(ctx)
+		if var_9 == nil {
+			var_9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, err = templBuffer.WriteString("<div id=\"tbl-results\">")
@@ -192,21 +197,12 @@ func wrapBody() templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_9 := templ.GetChildren(ctx)
-		if var_9 == nil {
-			var_9 = templ.NopComponent
+		var_10 := templ.GetChildren(ctx)
+		if var_10 == nil {
+			var_10 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, err = templBuffer.WriteString("<!doctype html><html><head><meta charset=\"utf-8\"><script src=\"https://unpkg.com/htmx.org@1.9.4\" integrity=\"sha384-zUfuhFKKZCbHTY6aRR46gxiqszMk5tcHjsVFxnUo8VMus4kHGVdIYVbOYYNlKmHV\" crossorigin=\"anonymous\">")
-		if err != nil {
-			return err
-		}
-		var_10 := ``
-		_, err = templBuffer.WriteString(var_10)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</script><script src=\"https://unpkg.com/hyperscript.org@0.9.11\">")
 		if err != nil {
 			return err
 		}
@@ -215,12 +211,21 @@ func wrapBody() templ.Component {
 		if err != nil {
 			return err
 		}
+		_, err = templBuffer.WriteString("</script><script src=\"https://unpkg.com/hyperscript.org@0.9.11\">")
+		if err != nil {
+			return err
+		}
+		var_12 := ``
+		_, err = templBuffer.WriteString(var_12)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</script><link href=\"/static/tailwindcss/output.css\" rel=\"stylesheet\"><link href=\"https://unpkg.com/flowbite@1.8.1/dist/flowbite.min.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/fontawesome.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/brands.css\" rel=\"stylesheet\"><link href=\"/static/fontawesome/css/solid.css\" rel=\"stylesheet\"><title>")
 		if err != nil {
 			return err
 		}
-		var_12 := `Hello`
-		_, err = templBuffer.WriteString(var_12)
+		var_13 := `Hello`
+		_, err = templBuffer.WriteString(var_13)
 		if err != nil {
 			return err
 		}
@@ -228,7 +233,7 @@ func wrapBody() templ.Component {
 		if err != nil {
 			return err
 		}
-		err = var_9.Render(ctx, templBuffer)
+		err = var_10.Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
@@ -236,8 +241,8 @@ func wrapBody() templ.Component {
 		if err != nil {
 			return err
 		}
-		var_13 := ``
-		_, err = templBuffer.WriteString(var_13)
+		var_14 := ``
+		_, err = templBuffer.WriteString(var_14)
 		if err != nil {
 			return err
 		}
@@ -260,9 +265,9 @@ func standardLayout(is_logged_in bool) templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_14 := templ.GetChildren(ctx)
-		if var_14 == nil {
-			var_14 = templ.NopComponent
+		var_15 := templ.GetChildren(ctx)
+		if var_15 == nil {
+			var_15 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, err = templBuffer.WriteString("<div class=\"flex min-h-screen w-full flex-col grow word-break\">")
@@ -277,7 +282,7 @@ func standardLayout(is_logged_in bool) templ.Component {
 		if err != nil {
 			return err
 		}
-		err = var_14.Render(ctx, templBuffer)
+		err = var_15.Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
@@ -308,18 +313,18 @@ func PageIndex(inp PageIndexInput) templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_15 := templ.GetChildren(ctx)
-		if var_15 == nil {
-			var_15 = templ.NopComponent
+		var_16 := templ.GetChildren(ctx)
+		if var_16 == nil {
+			var_16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var_16 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		var_17 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			templBuffer, templIsBuffer := w.(*bytes.Buffer)
 			if !templIsBuffer {
 				templBuffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templBuffer)
 			}
-			var_17 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			var_18 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 				templBuffer, templIsBuffer := w.(*bytes.Buffer)
 				if !templIsBuffer {
 					templBuffer = templ.GetBuffer()
@@ -342,7 +347,7 @@ func PageIndex(inp PageIndexInput) templ.Component {
 				}
 				return err
 			})
-			err = standardLayout(inp.IsLoggedIn).Render(templ.WithChildren(ctx, var_17), templBuffer)
+			err = standardLayout(inp.IsLoggedIn).Render(templ.WithChildren(ctx, var_18), templBuffer)
 			if err != nil {
 				return err
 			}
@@ -351,7 +356,7 @@ func PageIndex(inp PageIndexInput) templ.Component {
 			}
 			return err
 		})
-		err = wrapBody().Render(templ.WithChildren(ctx, var_16), templBuffer)
+		err = wrapBody().Render(templ.WithChildren(ctx, var_17), templBuffer)
 		if err != nil {
 			return err
 		}
@@ -370,9 +375,9 @@ func mainBody(inp PageIndexInput) templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_18 := templ.GetChildren(ctx)
-		if var_18 == nil {
-			var_18 = templ.NopComponent
+		var_19 := templ.GetChildren(ctx)
+		if var_19 == nil {
+			var_19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if inp.IsLoggedIn {
@@ -405,8 +410,8 @@ func mainBody(inp PageIndexInput) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_19 := `Please sign in`
-			_, err = templBuffer.WriteString(var_19)
+			var_20 := `Please sign in`
+			_, err = templBuffer.WriteString(var_20)
 			if err != nil {
 				return err
 			}
@@ -414,8 +419,8 @@ func mainBody(inp PageIndexInput) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_20 := ``
-			_, err = templBuffer.WriteString(var_20)
+			var_21 := ``
+			_, err = templBuffer.WriteString(var_21)
 			if err != nil {
 				return err
 			}
@@ -439,8 +444,8 @@ func mainBody(inp PageIndexInput) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_21 := `Only support logging in with your Google account since that's where we pull contact data from`
-			_, err = templBuffer.WriteString(var_21)
+			var_22 := `Only support logging in with your Google account since that's where we pull contact data from`
+			_, err = templBuffer.WriteString(var_22)
 			if err != nil {
 				return err
 			}
@@ -448,8 +453,8 @@ func mainBody(inp PageIndexInput) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_22 := `No Google account?`
-			_, err = templBuffer.WriteString(var_22)
+			var_23 := `No Google account?`
+			_, err = templBuffer.WriteString(var_23)
 			if err != nil {
 				return err
 			}
@@ -457,8 +462,8 @@ func mainBody(inp PageIndexInput) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_23 := `Create one`
-			_, err = templBuffer.WriteString(var_23)
+			var_24 := `Create one`
+			_, err = templBuffer.WriteString(var_24)
 			if err != nil {
 				return err
 			}

@@ -19,7 +19,8 @@ type PageIndexInput struct {
 
 templ welcomeMessage(name string) {
 	if len(name) > 0 {
-		Welcome&nbsp;name
+		Welcome&nbsp;
+		{ name }
 	} else {
 		Welcome
 	}

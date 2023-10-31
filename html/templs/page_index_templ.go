@@ -45,6 +45,10 @@ func welcomeMessage(name string) templ.Component {
 			if err != nil {
 				return err
 			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
 			var var_3 string = name
 			_, err = templBuffer.WriteString(templ.EscapeString(var_3))
 			if err != nil {

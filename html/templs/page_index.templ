@@ -6,11 +6,11 @@ import (
 )
 
 type PageIndexInput struct {
-    ClientID string
-    LoginURL string
-	IsLoggedIn bool
-    WelcomeName string
-	Groups []*people.ContactGroup
+	ClientID             string
+	LoginURL             string
+	IsLoggedIn           bool
+	WelcomeName          string
+	Groups               []*people.ContactGroup
 	TableResults         []cohabitaters.XmasCard
 	SelectedResourceName string
 	GroupErrorMsg        string
@@ -92,7 +92,8 @@ templ PageIndex(inp PageIndexInput) {
 templ mainBody(inp PageIndexInput) {
 	if inp.IsLoggedIn {
 		<div class="p-8">
-			<p class="text-xl py-4">@welcomeMessage(inp.WelcomeName)</p>
+			<p class="text-xl py-4">@welcomeMessage(inp.WelcomeName)
+</p>
 			@groupResults(inp)
 			@tableResults(inp)
 		</div>
@@ -129,4 +130,3 @@ templ mainBody(inp PageIndexInput) {
 		</div>
 	}
 }
-

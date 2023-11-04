@@ -15,7 +15,11 @@ PATH := $(shell go env GOPATH)/bin:$(PATH)
 SHELL := env PATH=$(PATH) ${SHELL}
 
  ifeq (, $(shell which sqlc))
- $(error "sqlc not found in $(PATH), `go install` it")
+ $(error "sqlc not found in $(PATH), `go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest`")
+ endif
+
+ ifeq (, $(shell which templ))
+ $(error "templ not found in $(PATH), `go install github.com/a-h/templ/cmd/templ@latest`")
  endif
 
 TARGETS := $(addprefix bin/,$(BINARIES))

@@ -70,8 +70,14 @@ func (w WebUI) fillTmplIndexData(ctx context.Context, sessionID int, selectedRes
 		if err := json.Unmarshal([]byte(session.ContactGroupsJson.String), &groups); err != nil {
 			return err
 		}
+	} else {
+		return fmt.Errorf("invalid ContactGroups JSON")
 	}
 	out.Groups = groups
+
+	if len(groups) == 0 {
+		return nil
+	}
 
 	if len(selectedResourceName) == 0 && session.SelectedResourceName.Valid {
 		selectedResourceName = session.SelectedResourceName.String

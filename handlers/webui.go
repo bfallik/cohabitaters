@@ -229,6 +229,11 @@ func (w WebUI) PartialTableResults(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
+	if len(selectedResourceName) == 0 {
+		c.Logger().Error("empty contact-group")
+		return c.NoContent(http.StatusBadRequest)
+	}
+
 	tmplData := newTmplIndexData()
 	if err = w.fillTmplIndexData(c.Request().Context(), sessionID, selectedResourceName[0], &tmplData); err != nil {
 		return err
